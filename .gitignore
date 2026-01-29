@@ -48,3 +48,41 @@ __pycache__/
 # data
 *.xls
 *.xlsx
+
+# AI and IDE Artifacts
+.agent/
+.agents/
+.claude/
+.cline/
+.codebuddy/
+.codex/
+.commandcode/
+.continue/
+.crush/
+.cursor/
+.factory/
+.gemini/
+.github/
+.junie/
+.kilocode/
+.kiro/
+.kode/
+.mcpjam/
+.mux/
+.neovate/
+.opencode/
+.openhands/
+.pi/
+.pochi/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.windsurf/
+.zencoder/
+
+# Temporary Scripts
+agents/list_models.py
+agents/toolschagesV1.MD
+agents/verify_tools.py
+skills/
