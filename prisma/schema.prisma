@@ -56,3 +56,17 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+model MediaAnalysis {
+  id              String   @id @default(cuid())
+  name            String   // User-defined or auto-generated name
+  planFileName    String   // Original plan file name
+  execFileName    String   // Original execution file name
+  analysis        String   @db.Text  // AI insights text
+  metrics         Json     // Metrics object
+  summary         Json     // Summary object  
+  discrepancies   Json     // Discrepancies array
+  recommendations Json     // Recommendations array
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

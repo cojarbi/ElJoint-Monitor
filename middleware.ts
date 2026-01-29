@@ -25,7 +25,7 @@ export default withAuth(
     },
     {
         callbacks: {
-            authorized: ({ token }) => !!token,
+            authorized: () => true, // Always allow - we handle auth logic in the middleware function above
         },
         pages: {
             signIn: '/login',

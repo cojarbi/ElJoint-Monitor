@@ -112,7 +112,7 @@ def create_media_monitor_agent() -> Agent:
     # Create the agent
     agent = Agent(
         name="MediaMonitorAgent",
-        model="gemini-2.0-flash",
+        model="gemini-3.0-flash",
         instructions=AGENT_INSTRUCTIONS,
         tools=[
             parse_plan_tool,

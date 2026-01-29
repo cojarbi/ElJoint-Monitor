@@ -24,18 +24,22 @@ export async function POST(request: NextRequest) {
             body: formData,
         });
 
+        const result = await response.json().catch(() => ({}));
+
+        // Pass through the response from Python service
+        // This includes AI availability errors with proper structure
         if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
             return NextResponse.json(
                 {
-                    error: 'Analysis failed',
-                    details: errorData.detail || response.statusText
+                    error: result.error || 'Analysis failed',
+                    details: result.details || result.detail || response.statusText,
+                    ai_required: result.ai_required || false,
+                    status: result.status || 'error'
                 },
                 { status: response.status }
             );
         }
 
-        const result = await response.json();
         return NextResponse.json(result);
 
     } catch (error) {
@@ -47,15 +51,17 @@ export async function POST(request: NextRequest) {
         if (errorMessage.includes('ECONNREFUSED') || errorMessage.includes('fetch failed')) {
             return NextResponse.json(
                 {
-                    error: 'Python ADK service is not running',
-                    details: 'Please start the Python service with: cd agents && uvicorn api_server:app --reload --port 8000'
+                    error: 'AI Service Unavailable',
+                    details: 'The Python AI service is not running. Please start it with: npm run dev',
+                    ai_required: true,
+                    status: 'error'
                 },
                 { status: 503 }
             );
         }
 
         return NextResponse.json(
-            { error: 'Analysis failed', details: errorMessage },
+            { error: 'Analysis failed', details: errorMessage, status: 'error' },
             { status: 500 }
         );
     }
