@@ -46,11 +46,6 @@ const data = {
   ],
   navMain: [
     {
-      title: "Data Input",
-      url: "/data-input",
-      icon: Database,
-    },
-    {
       title: "Agents",
       url: "/agents",
       icon: Bot,
@@ -60,11 +55,6 @@ const data = {
           url: "/agents/monitor",
         },
       ],
-    },
-    {
-      title: "Reports",
-      url: "/reports",
-      icon: BarChart,
     },
     {
       title: "Settings",
