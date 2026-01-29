@@ -14,6 +14,7 @@ class DiscrepancyType(Enum):
     WRONG_DURATION = "wrong_duration"
     WRONG_CHANNEL = "wrong_channel"
     WRONG_DATE = "wrong_date"
+    WRONG_TIME = "wrong_time"
 
 
 class Severity(Enum):

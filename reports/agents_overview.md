@@ -5,7 +5,7 @@
 | Property | Value |
 |----------|-------|
 | **File** | [media_monitor_agent.py](file:///Users/ayahni/Documents/ElJoint%20Monitor/agents/media_monitor_agent.py) |
-| **Model** | `gemini-3.0-flash` |
+| **Model** | `gemini-3-flash-preview` |
 | **Framework** | Google ADK (Agent Development Kit) |
 
 ### Purpose
@@ -83,7 +83,7 @@ Be concise but thorough. Use business language that media buyers will understand
 | Property | Value |
 |----------|-------|
 | **File** | [ai_parser.py](file:///Users/ayahni/Documents/ElJoint%20Monitor/agents/tools/ai_parser.py) |
-| **Model** | `gemini-3.0-flash` |
+| **Model** | `gemini-3-flash-preview` |
 | **Library** | `google.genai` (Gemini Python SDK) |
 
 ### Functions & Prompts

@@ -8,7 +8,7 @@ from google.adk.tools import FunctionTool
 
 from tools import (
     parse_plan_file_tool,
-    parse_execution_file_tool,
+    parse_execution_file_tool_v2,
     match_spots_tool,
     calculate_metrics_tool,
     generate_report_tool
@@ -86,7 +86,7 @@ def create_media_monitor_agent() -> Agent:
     )
     
     parse_execution_tool = FunctionTool(
-        func=parse_execution_file_tool,
+        func=parse_execution_file_tool_v2,
         name="parse_execution_file",
         description="Parse the Execution (Monitoreo) Excel file to extract actually aired spots from the Consulta Infoanalisis tab. Returns list of aired spots with channel, program, date, and duration."
     )
@@ -112,7 +112,7 @@ def create_media_monitor_agent() -> Agent:
     # Create the agent
     agent = Agent(
         name="MediaMonitorAgent",
-        model="gemini-3.0-flash",
+        model="gemini-3-flash-preview",
         instructions=AGENT_INSTRUCTIONS,
         tools=[
             parse_plan_tool,

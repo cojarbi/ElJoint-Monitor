@@ -10,7 +10,25 @@ from typing import Optional
 from google import genai
 from google.genai import types
 
+import re
 
+def clean_json_response(text: str) -> str:
+    """
+    Clean AI response to extract valid JSON.
+    Removes markdown code blocks and handles potential thought traces.
+    """
+    # Remove markdown code blocks
+    text = re.sub(r'```json\s*', '', text)
+    text = re.sub(r'```', '', text)
+    
+    # If the text contains multiple JSON objects or extra text, try to find the main object
+    # This matches the first outer {} or [] structure
+    # (Simple logic, can be improved if needed)
+    match = re.search(r'(\{.*\}|\[.*\])', text, re.DOTALL)
+    if match:
+        return match.group(0)
+    
+    return text.strip()
 def get_excel_engine(file_path: str) -> str:
     """Determine the appropriate pandas engine based on file extension."""
     ext = os.path.splitext(file_path)[1].lower()
@@ -52,7 +70,7 @@ def check_ai_availability() -> tuple[bool, Optional[str]]:
     try:
         client = genai.Client()
         response = client.models.generate_content(
-            model='gemini-3.0-flash',
+            model='gemini-3-flash-preview',
             contents='Reply with just the word "OK"',
             config=types.GenerateContentConfig(
                 max_output_tokens=10,
@@ -108,7 +126,7 @@ Return ONLY a valid JSON object with this structure:
     try:
         client = genai.Client()
         response = client.models.generate_content(
-            model='gemini-3.0-flash',
+            model='gemini-3-flash-preview',
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.1,  # Low temperature for consistent parsing
@@ -116,7 +134,9 @@ Return ONLY a valid JSON object with this structure:
             )
         )
         
-        result = json.loads(response.text)
+        # Clean and parse the response
+        cleaned_text = clean_json_response(response.text)
+        result = json.loads(cleaned_text)
         return {"success": True, **result}
         
     except json.JSONDecodeError as e:
@@ -163,7 +183,7 @@ Return ONLY a valid JSON object with this structure:
     try:
         client = genai.Client()
         response = client.models.generate_content(
-            model='gemini-3.0-flash',
+            model='gemini-3-flash-preview',
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.1,
@@ -171,7 +191,8 @@ Return ONLY a valid JSON object with this structure:
             )
         )
         
-        result = json.loads(response.text)
+        cleaned_text = clean_json_response(response.text)
+        result = json.loads(cleaned_text)
         return {"success": True, **result}
         
     except json.JSONDecodeError as e:
@@ -237,7 +258,7 @@ Return ONLY a valid JSON object:
     try:
         client = genai.Client()
         response = client.models.generate_content(
-            model='gemini-3.0-flash',
+            model='gemini-3-flash-preview',
             contents=prompt,
             config=types.GenerateContentConfig(
                 temperature=0.3,
@@ -245,7 +266,8 @@ Return ONLY a valid JSON object:
             )
         )
         
-        result = json.loads(response.text)
+        cleaned_text = clean_json_response(response.text)
+        result = json.loads(cleaned_text)
         return {"success": True, **result}
         
     except json.JSONDecodeError as e:

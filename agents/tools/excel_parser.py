@@ -7,6 +7,9 @@ from datetime import datetime
 from typing import Optional
 import re
 import os
+import json
+from google import genai
+from google.genai import types
 
 from .types import PlannedSpot, AiredSpot
 
@@ -36,6 +39,44 @@ def normalize_channel_name(channel: str) -> str:
         return ""
     upper = channel.upper().strip()
     return CHANNEL_MAPPING.get(upper, channel.strip())
+
+
+def smart_normalize_batch(raw_channels: list[str]) -> dict:
+    """
+    Use Gemini to create a normalization map for a list of raw channel names.
+    This runs ONCE per file, not per row, for efficiency.
+    """
+    if not raw_channels:
+        return {}
+        
+    unique_channels = list(set([str(c).strip() for c in raw_channels if c]))
+    
+    prompt = f"""
+    You are a data cleaning assistant for a Media Agency.
+    Map these raw channel names to the standard names: "TVN" or "Telemetro".
+    
+    Raw Names: {json.dumps(unique_channels)}
+    
+    Rules:
+    - "TVN", "TVN-2", "Television Nacional", "TVN HD" -> "TVN"
+    - "Telemetro", "MEDCOM", "Telemetro Reporta", "Canal 13" -> "Telemetro"
+    - If unsure or unrelated, keep the original name.
+    
+    Return JSON: {{"Raw Name": "Standard Name"}}
+    """
+    
+    try:
+        client = genai.Client(api_key=os.environ.get("GOOGLE_API_KEY"))
+        response = client.models.generate_content(
+            model='gemini-2.0-flash',
+            contents=prompt,
+            config=types.GenerateContentConfig(response_mime_type="application/json")
+        )
+        return json.loads(response.text)
+    except Exception as e:
+        print(f"AI Normalization failed: {e}. Falling back to raw names.")
+        # Fallback: Map names to themselves
+        return {name: name for name in unique_channels}
 
 
 def parse_day_pattern(days: str) -> list[int]:
@@ -173,17 +214,13 @@ def parse_plan_file(file_path: str) -> dict:
         return {"error": str(e)}
 
 
-def parse_execution_file(file_path: str) -> list[AiredSpot]:
+def parse_execution_file(file_path: str, debug_log: list = None) -> list[AiredSpot]:
     """
     Parse the Execution (Monitoreo) Excel file.
     Extracts data from 'Consulta Infoanalisis' tab.
-    
-    Args:
-        file_path: Path to the Excel file
-        
-    Returns:
-        List of AiredSpot objects
     """
+    if debug_log is None: debug_log = []
+    
     try:
         engine = get_excel_engine(file_path)
         excel_file = pd.ExcelFile(file_path, engine=engine)
@@ -200,8 +237,17 @@ def parse_execution_file(file_path: str) -> list[AiredSpot]:
             # Use first sheet if no match
             target_sheet = excel_file.sheet_names[0]
         
+        msg = f"Using sheet '{target_sheet}' from: {excel_file.sheet_names}"
+        print(f"DEBUG: {msg}", flush=True)
+        debug_log.append(msg)
+        
         # Read sheet into DataFrame
         df_raw = pd.read_excel(excel_file, sheet_name=target_sheet, header=None)
+        
+        shape_msg = f"DataFrame shape: {df_raw.shape}"
+        print(f"DEBUG: {shape_msg}", flush=True)
+        debug_log.append(shape_msg)
+        # debug_log.append(f"Head: {df_raw.head(3).to_string()}") # Optional: too verbose for error msg?
         
         # Find header row
         header_row = None
@@ -210,18 +256,72 @@ def parse_execution_file(file_path: str) -> list[AiredSpot]:
         for row_idx in range(min(20, len(df_raw))):
             for col_idx in range(len(df_raw.columns)):
                 cell_value = str(df_raw.iloc[row_idx, col_idx]).lower() if pd.notna(df_raw.iloc[row_idx, col_idx]) else ""
-                if "vehiculo" in cell_value or "soporte" in cell_value or "fecha" in cell_value:
+                # Expanded keywords for robustness
+                if ("vehiculo" in cell_value or "canal" in cell_value or "medio" in cell_value) and \
+                   ("soporte" in cell_value or "programa" in cell_value) and \
+                   ("fecha" in cell_value):
                     header_row = row_idx
                     for c_idx in range(len(df_raw.columns)):
                         val = df_raw.iloc[row_idx, c_idx]
                         if pd.notna(val):
                             headers[str(val).lower().strip()] = c_idx
                     break
+                # Fallback: check for just a few key columns if strict match fails
+                elif "vehiculo" in cell_value or "soporte" in cell_value or "fecha" in cell_value:
+                     # Potential header candidate
+                     header_row = row_idx
+            
             if header_row is not None:
-                break
+                # Validate this row actually looks like a header (has multiple expected columns)
+                temp_headers = {}
+                for c_idx in range(len(df_raw.columns)):
+                    val = df_raw.iloc[row_idx, c_idx]
+                    if pd.notna(val):
+                        temp_headers[str(val).lower().strip()] = c_idx
+                
+                has_channel = any(k for k in temp_headers if "vehiculo" in k or "canal" in k or "medio" in k)
+                has_program = any(k for k in temp_headers if "soporte" in k or "programa" in k)
+                
+                if has_channel or has_program:
+                    headers = temp_headers
+                    break
+                else:
+                    header_row = None # False positive
+
+        log_msg = f"Header row: {header_row}. Headers found: {list(headers.keys())}"
+        print(f"DEBUG: {log_msg}", flush=True)
+        debug_log.append(log_msg)
         
         if header_row is None:
+            debug_log.append("No header row found matching keywords")
             return []
+
+        # --- NEW: AI Normalization Step ---
+        # 1. Extract all raw values from the "Channel" column first
+        raw_channels = []
+        channel_col_idx = -1
+        
+        # Find channel column index from headers
+        for h, idx in headers.items():
+            if "vehiculo" in h:
+                channel_col_idx = idx
+                break
+        
+        if channel_col_idx == -1:
+             # Try alternatives
+             for h, idx in headers.items():
+                if "canal" in h or "medio" in h:
+                    channel_col_idx = idx
+                    break
+
+        if channel_col_idx >= 0:
+            for row_idx in range(header_row + 1, len(df_raw)):
+                val = df_raw.iloc[row_idx, channel_col_idx]
+                if pd.notna(val):
+                    raw_channels.append(str(val))
+        
+        # 2. Get the map from AI
+        channel_map = smart_normalize_batch(raw_channels)
         
         # Parse data rows
         for row_idx in range(header_row + 1, len(df_raw)):
@@ -237,9 +337,11 @@ def parse_execution_file(file_path: str) -> list[AiredSpot]:
             for header, idx in headers.items():
                 if idx < len(row) and pd.notna(row[idx]):
                     value = row[idx]
-                    if "vehiculo" in header:
-                        channel = normalize_channel_name(str(value))
-                    elif "soporte" in header:
+                    if "vehiculo" in header or "canal" in header or "medio" in header:
+                        # Apply the AI map
+                        raw_channel_name = str(value).strip()
+                        channel = channel_map.get(raw_channel_name, raw_channel_name)
+                    elif "soporte" in header or "programa" in header:
                         program = str(value).strip()
                     elif "fecha" in header:
                         # Parse date (YYYYMMDD format)
@@ -271,6 +373,11 @@ def parse_execution_file(file_path: str) -> list[AiredSpot]:
         return spots
         
     except Exception as e:
+        msg = f"DEBUG: Error parsing execution file: {str(e)}"
+        print(msg)
+        debug_log.append(msg)
+        import traceback
+        traceback.print_exc()
         return []
 
 
@@ -304,7 +411,7 @@ def parse_plan_file_tool(file_path: str) -> str:
     }, indent=2)
 
 
-def parse_execution_file_tool(file_path: str) -> str:
+def parse_execution_file_tool_v2(file_path: str) -> str:
     """
     Parse the Execution (Monitoreo) Excel file to extract actually aired spots.
     
@@ -315,10 +422,16 @@ def parse_execution_file_tool(file_path: str) -> str:
         JSON string with parsed aired spots
     """
     import json
-    spots = parse_execution_file(file_path)
+    # Capture debug info to return in case of error
+    debug_info = []
+    
+    try:
+        spots = parse_execution_file(file_path, debug_log=debug_info)
+    except Exception as e:
+         return json.dumps({"error": f"Parser Error: {str(e)} | Debug: {'; '.join(debug_info)}"})
     
     if not spots:
-        return json.dumps({"error": "No spots found in execution file"})
+        return json.dumps({"error": f"ERROR_V2: No spots found in execution file. Debug: {'; '.join(debug_info)}"})
     
     return json.dumps({
         "success": True,

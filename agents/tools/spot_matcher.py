@@ -1,149 +1,48 @@
 """
 Spot Matcher Tool for Media Monitor Agent
-Matches planned spots with aired spots using fuzzy matching
+Matches planned spots with aired spots using "One-to-One" logic
 """
 import json
-from typing import Optional
+from typing import Optional, Set
 from Levenshtein import ratio as levenshtein_ratio
+from datetime import datetime
 
 from .types import (
     PlannedSpot, AiredSpot, MatchedSpot, Discrepancy,
     MatchResult, DiscrepancyType, Severity
 )
-
+from .excel_parser import parse_day_pattern  # Re-use the day parser helper
 
 def fuzzy_match_program(program1: str, program2: str) -> float:
-    """
-    Calculate similarity score between two program names.
-    
-    Args:
-        program1: First program name
-        program2: Second program name
-        
-    Returns:
-        Similarity score from 0 to 1
-    """
-    if not program1 or not program2:
-        return 0.0
-    
-    # Normalize: lowercase, remove extra spaces
+    """Calculate similarity score between two program names."""
+    if not program1 or not program2: return 0.0
     p1 = " ".join(program1.lower().split())
     p2 = " ".join(program2.lower().split())
-    
-    # Exact match
-    if p1 == p2:
-        return 1.0
-    
-    # Levenshtein ratio
+    if p1 == p2: return 1.0
     return levenshtein_ratio(p1, p2)
 
-
 def check_duration_match(planned: int, actual: int, tolerance: int = 2) -> bool:
-    """
-    Check if actual duration is within tolerance of planned duration.
-    
-    Args:
-        planned: Planned duration in seconds
-        actual: Actual duration in seconds
-        tolerance: Allowed difference in seconds
-        
-    Returns:
-        True if within tolerance
-    """
+    """Check if actual duration is within tolerance."""
     return abs(planned - actual) <= tolerance
 
-
 def check_channel_match(planned: str, aired: str) -> bool:
-    """Check if channels match (case-insensitive)"""
-    if not planned or not aired:
-        return False
+    """Strict channel match (normalization happens in parser)."""
+    if not planned or not aired: return False
     return planned.lower().strip() == aired.lower().strip()
 
-
-def categorize_discrepancy(
-    planned: Optional[PlannedSpot],
-    aired: Optional[AiredSpot],
-    match_score: float = 0
-) -> Discrepancy:
+def check_day_match(planned_days_pattern: str, air_date: datetime) -> bool:
     """
-    Categorize a discrepancy based on what didn't match.
-    
-    Args:
-        planned: The planned spot (None if extra aired spot)
-        aired: The aired spot (None if missing planned spot)
-        match_score: The fuzzy match score
-        
-    Returns:
-        Discrepancy object with categorization
+    Check if the specific air date falls within the planned day pattern.
+    Example: Does 2025-10-20 (Monday) match 'L-V'? -> Yes
     """
-    if planned is None and aired is not None:
-        return Discrepancy(
-            type=DiscrepancyType.EXTRA_SPOT,
-            severity=Severity.MEDIUM,
-            channel=aired.channel,
-            program=aired.program,
-            expected=None,
-            actual=f"{aired.program} on {aired.date}",
-            explanation=f"Spot aired on {aired.channel} - '{aired.program}' was not in the plan"
-        )
+    if not air_date or not planned_days_pattern:
+        return False
     
-    if aired is None and planned is not None:
-        return Discrepancy(
-            type=DiscrepancyType.MISSING_SPOT,
-            severity=Severity.HIGH,
-            channel=planned.channel,
-            program=planned.program,
-            expected=f"{planned.program} ({planned.days})",
-            actual=None,
-            explanation=f"Planned spot on {planned.channel} - '{planned.program}' did not air"
-        )
+    # 0=Monday, 6=Sunday
+    weekday = air_date.weekday()
+    allowed_days = parse_day_pattern(planned_days_pattern)
     
-    if planned and aired:
-        # Determine which aspect didn't match
-        if not check_channel_match(planned.channel, aired.channel):
-            return Discrepancy(
-                type=DiscrepancyType.WRONG_CHANNEL,
-                severity=Severity.HIGH,
-                channel=planned.channel,
-                program=planned.program,
-                expected=planned.channel,
-                actual=aired.channel,
-                explanation=f"Spot for '{planned.program}' aired on {aired.channel} instead of {planned.channel}"
-            )
-        
-        if not check_duration_match(planned.duration, aired.duration):
-            return Discrepancy(
-                type=DiscrepancyType.WRONG_DURATION,
-                severity=Severity.MEDIUM,
-                channel=planned.channel,
-                program=planned.program,
-                expected=f"{planned.duration}s",
-                actual=f"{aired.duration}s",
-                explanation=f"Spot '{planned.program}' had duration {aired.duration}s instead of planned {planned.duration}s"
-            )
-        
-        if match_score < 0.8:
-            return Discrepancy(
-                type=DiscrepancyType.WRONG_PROGRAM,
-                severity=Severity.HIGH,
-                channel=planned.channel,
-                program=planned.program,
-                expected=planned.program,
-                actual=aired.program,
-                explanation=f"Spot aired in '{aired.program}' instead of planned '{planned.program}' (similarity: {match_score:.0%})"
-            )
-    
-    # Default
-    return Discrepancy(
-        type=DiscrepancyType.MISSING_SPOT,
-        severity=Severity.LOW,
-        channel=planned.channel if planned else (aired.channel if aired else "Unknown"),
-        program=planned.program if planned else (aired.program if aired else "Unknown"),
-        expected=str(planned) if planned else None,
-        actual=str(aired) if aired else None,
-        explanation="Unspecified discrepancy"
-    )
-
+    return weekday in allowed_days
 
 def match_spots(
     planned_spots: list[PlannedSpot],
@@ -152,142 +51,214 @@ def match_spots(
     duration_tolerance: int = 2
 ) -> MatchResult:
     """
-    Match aired spots with planned spots using fuzzy matching.
-    
-    Args:
-        planned_spots: List of planned spots from the Plan file
-        aired_spots: List of aired spots from the Execution file
-        program_threshold: Minimum similarity score for program name match
-        duration_tolerance: Maximum difference in duration (seconds)
-        
-    Returns:
-        MatchResult containing matches and discrepancies
+    Match spots using One-to-One logic. 
+    Prioritizes 'Perfect Matches' first, then 'Wrong Day Matches'.
+    Everything else is Overage.
     """
     matched = []
     discrepancies = []
-    unmatched_planned = list(planned_spots)  # Copy to track
-    unmatched_aired = []
     
-    # Track how many times each planned spot has been matched
-    planned_match_counts = {id(p): 0 for p in planned_spots}
+    # Track consumed planned spots by their unique object ID
+    consumed_planned_ids: Set[int] = set()
     
-    for aired in aired_spots:
+    # We will process aired spots in two passes to prioritize quality matches
+    # Pass 1: Find Perfect Matches (Program + Channel + Duration + CORRECT DAY)
+    # Pass 2: Find Imperfect Matches (Wrong Day)
+    
+    unmatched_aired_indices = set(range(len(aired_spots)))
+    
+    # --- PASS 1: Perfect Matches ---
+    for i, aired in enumerate(aired_spots):
         best_match = None
         best_score = 0
-        best_planned = None
         
-        # Find best matching planned spot
         for planned in planned_spots:
-            # Must match channel
-            if not check_channel_match(planned.channel, aired.channel):
+            # Skip if already used
+            if id(planned) in consumed_planned_ids:
                 continue
+                
+            # Hard constraints
+            if not check_channel_match(planned.channel, aired.channel): continue
+            if not check_duration_match(planned.duration, aired.duration, duration_tolerance): continue
             
-            # Must match duration within tolerance
-            if not check_duration_match(planned.duration, aired.duration, duration_tolerance):
-                continue
-            
-            # Calculate program name similarity
+            # Program Fuzzy Match
             score = fuzzy_match_program(planned.program, aired.program)
             
-            if score > best_score:
-                best_score = score
-                best_planned = planned
-        
-        if best_planned and best_score >= program_threshold:
-            # Good match found
+            if score >= program_threshold:
+                # Check Day Constraint for "Perfect Match"
+                if check_day_match(planned.days, aired.date):
+                    if score > best_score:
+                        best_score = score
+                        best_match = planned
+
+        if best_match:
+            # We found a perfect match
             matched.append(MatchedSpot(
-                planned=best_planned,
+                planned=best_match,
                 aired=aired,
                 match_score=best_score
             ))
-            planned_match_counts[id(best_planned)] += 1
+            consumed_planned_ids.add(id(best_match))
+            unmatched_aired_indices.remove(i)
+
+    # --- PASS 2: Wrong Day Matches (but still correct program) ---
+    for i in list(unmatched_aired_indices): # Iterate copy to allow modification
+        aired = aired_spots[i]
+        best_match = None
+        best_score = 0
+        
+        for planned in planned_spots:
+            if id(planned) in consumed_planned_ids: continue
+            if not check_channel_match(planned.channel, aired.channel): continue
+            if not check_duration_match(planned.duration, aired.duration, duration_tolerance): continue
             
-            # Remove from unmatched if this is first match
-            if best_planned in unmatched_planned:
-                unmatched_planned.remove(best_planned)
-        else:
-            # No match found
-            unmatched_aired.append(aired)
-            discrepancies.append(categorize_discrepancy(None, aired))
+            score = fuzzy_match_program(planned.program, aired.program)
+            
+            # We accept the match even if the day is wrong, but flag it
+            if score >= program_threshold:
+                if score > best_score:
+                    best_score = score
+                    best_match = planned
+        
+        if best_match:
+            # Record as matched (but flagged as wrong day)
+            matched.append(MatchedSpot(
+                planned=best_match,
+                aired=aired,
+                match_score=best_score
+            ))
+
+            # Found a match, but it's on the wrong day
+            discrepancies.append(Discrepancy(
+                type=DiscrepancyType.WRONG_TIME, # Using WRONG_TIME for Wrong Day
+                severity=Severity.MEDIUM,
+                channel=best_match.channel,
+                program=best_match.program,
+                expected=f"{best_match.days}",
+                actual=f"{aired.date.strftime('%A')}",
+                explanation=(
+                    f"Spot aired on wrong day ({aired.date.strftime('%Y-%m-%d')}) "
+                    f"for plan '{best_match.days}'"
+                )
+            ))
+            # Mark as consumed so it doesn't look "Missing" later
+            consumed_planned_ids.add(id(best_match))
+            unmatched_aired_indices.remove(i)
+
+    # --- FINALIZING: Overage and Missing ---
     
-    # Add discrepancies for unmatched planned spots
-    for planned in unmatched_planned:
-        discrepancies.append(categorize_discrepancy(planned, None))
-    
+    # Any aired spot still unmatched is "Overage" (Extra Spot)
+    for i in unmatched_aired_indices:
+        aired = aired_spots[i]
+        discrepancies.append(Discrepancy(
+            type=DiscrepancyType.EXTRA_SPOT,
+            severity=Severity.LOW,
+            channel=aired.channel,
+            program=aired.program,
+            expected=None,
+            actual=f"{aired.program}",
+            explanation=f"Overage: Extra spot aired on {aired.date}"
+        ))
+
+    # Any planned spot not in consumed_ids is "Missing"
+    unmatched_planned = []
+    for planned in planned_spots:
+        if id(planned) not in consumed_planned_ids:
+            unmatched_planned.append(planned)
+            discrepancies.append(Discrepancy(
+                type=DiscrepancyType.MISSING_SPOT,
+                severity=Severity.HIGH,
+                channel=planned.channel,
+                program=planned.program,
+                expected=f"{planned.program}",
+                actual=None,
+                explanation=f"Spot did not air"
+            ))
+
     return MatchResult(
         matched=matched,
         discrepancies=discrepancies,
         unmatched_planned=unmatched_planned,
-        unmatched_aired=unmatched_aired
+        # Convert set of indices back to list of objects for the result
+        unmatched_aired=[aired_spots[i] for i in unmatched_aired_indices]
     )
-
 
 def match_spots_tool(planned_json: str, aired_json: str) -> str:
     """
-    Match planned spots with aired spots using intelligent fuzzy matching.
+    Match planned spots against aired spots to find discrepancies.
     
     Args:
-        planned_json: JSON string of planned spots from parse_plan_file
-        aired_json: JSON string of aired spots from parse_execution_file
+        planned_json: JSON string containing list of planned spots (from parse_plan_file_tool)
+        aired_json: JSON string containing list of aired spots (from parse_execution_file_tool)
         
     Returns:
-        JSON string with match results including matches and discrepancies
+        JSON string with match results and discrepancies
     """
     try:
         planned_data = json.loads(planned_json)
         aired_data = json.loads(aired_json)
         
-        if "error" in planned_data:
-            return json.dumps({"error": f"Plan file error: {planned_data['error']}"})
-        
-        if "error" in aired_data:
-            return json.dumps({"error": f"Execution file error: {aired_data['error']}"})
-        
-        # Convert JSON back to PlannedSpot objects
+        # Extract lists if wrapped in "data" key
+        if isinstance(planned_data, dict) and "data" in planned_data:
+            planned_raw = []
+            for channel_spots in planned_data["data"].values():
+                planned_raw.extend(channel_spots)
+        else:
+            planned_raw = planned_data
+            
+        if isinstance(aired_data, dict) and "data" in aired_data:
+            aired_raw = aired_data["data"]
+        else:
+            aired_raw = aired_data
+            
+        # Convert to objects
         planned_spots = []
-        for sheet_spots in planned_data.get("data", {}).values():
-            for spot_dict in sheet_spots:
+        for p in planned_raw:
+            # Handle multiple count by duplicating spots for matching logic
+            count = p.get("count", 1)
+            for _ in range(count):
                 planned_spots.append(PlannedSpot(
-                    channel=spot_dict["channel"],
-                    program=spot_dict["program"],
-                    days=spot_dict["days"],
-                    time_slot=spot_dict["time_slot"],
-                    duration=spot_dict["duration"],
-                    count=spot_dict.get("count", 1)
+                    channel=p["channel"],
+                    program=p["program"],
+                    days=p["days"],
+                    time_slot=p["time_slot"],
+                    duration=p["duration"],
+                    count=1 # Individual instance
                 ))
-        
-        # Convert JSON back to AiredSpot objects
+                
         aired_spots = []
-        from datetime import datetime
-        for spot_dict in aired_data.get("data", []):
-            date = None
-            if spot_dict.get("date"):
+        for a in aired_raw:
+            date_val = None
+            if a.get("date"):
                 try:
-                    date = datetime.fromisoformat(spot_dict["date"])
+                    date_val = datetime.fromisoformat(a["date"])
                 except ValueError:
                     pass
             
             aired_spots.append(AiredSpot(
-                channel=spot_dict["channel"],
-                program=spot_dict["program"],
-                date=date,
-                duration=spot_dict["duration"]
+                channel=a["channel"],
+                program=a["program"],
+                date=date_val,
+                duration=a["duration"]
             ))
-        
-        # Perform matching
+            
+        # Run matching
         result = match_spots(planned_spots, aired_spots)
+        result_dict = result.to_dict()
+
+        # Add summary in the shape expected by metrics/report tools
+        summary = {
+            "total_planned": len(planned_spots),
+            "total_aired": len(aired_spots),
+            "matched": len(result_dict.get("matched", [])),
+            "unmatched_planned": len(result_dict.get("unmatched_planned", [])),
+            "unmatched_aired": len(result_dict.get("unmatched_aired", [])),
+        }
         
         return json.dumps({
             "success": True,
-            "summary": {
-                "total_planned": len(planned_spots),
-                "total_aired": len(aired_spots),
-                "matched": len(result.matched),
-                "unmatched_planned": len(result.unmatched_planned),
-                "unmatched_aired": len(result.unmatched_aired),
-                "discrepancies": len(result.discrepancies)
-            },
-            "data": result.to_dict()
+            "summary": summary,
+            "data": result_dict
         }, indent=2)
         
     except Exception as e:

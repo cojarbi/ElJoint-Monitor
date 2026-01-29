@@ -8,7 +8,8 @@ export type PipelineStage =
     | 'parsing_plan'
     | 'parsing_execution'
     | 'matching'
-    | 'generating_insights'
+    | 'calculating_metrics'
+    | 'generating_report'
     | 'complete'
     | 'error';
 
@@ -20,8 +21,9 @@ interface PipelineProgressProps {
 const stages = [
     { id: 'parsing_plan', label: 'Parse Plan', shortLabel: 'Plan' },
     { id: 'parsing_execution', label: 'Parse Execution', shortLabel: 'Execution' },
-    { id: 'matching', label: 'Match & Compare', shortLabel: 'Match' },
-    { id: 'generating_insights', label: 'Generate Insights', shortLabel: 'Insights' },
+    { id: 'matching', label: 'Match Spots', shortLabel: 'Match' },
+    { id: 'calculating_metrics', label: 'Calculate Metrics', shortLabel: 'Metrics' },
+    { id: 'generating_report', label: 'Generate Report', shortLabel: 'Report' },
 ];
 
 function getStageStatus(stageId: string, currentStage: PipelineStage): 'pending' | 'active' | 'complete' | 'error' {
