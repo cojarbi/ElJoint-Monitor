@@ -59,6 +59,10 @@ const data = {
           title: "Monitor",
           url: "/agents/monitor",
         },
+        {
+          title: "Budget",
+          url: "/agents/budget",
+        },
       ],
     },
     {
