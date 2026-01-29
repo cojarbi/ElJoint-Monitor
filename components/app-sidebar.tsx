@@ -46,22 +46,28 @@ const data = {
   ],
   navMain: [
     {
-      name: "Data Input",
+      title: "Data Input",
       url: "/data-input",
       icon: Database,
     },
     {
-      name: "Agents",
+      title: "Agents",
       url: "/agents",
       icon: Bot,
+      items: [
+        {
+          title: "Monitor",
+          url: "/agents/monitor",
+        },
+      ],
     },
     {
-      name: "Reports",
+      title: "Reports",
       url: "/reports",
       icon: BarChart,
     },
     {
-      name: "Settings",
+      title: "Settings",
       url: "/settings",
       icon: Settings,
     },
@@ -75,8 +81,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        {/* Reusing NavProjects for flat list style */}
-        <NavProjects projects={data.navMain} />
+        <NavMain items={data.navMain} />
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />

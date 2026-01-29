@@ -1,4 +1,4 @@
-# Staffless
+# ElJoint Monitor
 
 Staffless is a comprehensive platform for managing business operations with AI agent integration. It combines a robust Next.js frontend with powerful backend services.
 
@@ -23,7 +23,7 @@ Staffless is a comprehensive platform for managing business operations with AI a
 
 ```bash
 git clone <repository-url>
-cd staffless
+cd eljoint-monitor
 ```
 
 ### 2. Install dependencies

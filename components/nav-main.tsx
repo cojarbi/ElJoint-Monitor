@@ -1,5 +1,7 @@
 "use client"
 
+import * as React from "react"
+
 import { ChevronRight, type LucideIcon } from "lucide-react"
 
 import {
@@ -32,6 +34,21 @@ export function NavMain({
     }[]
   }[]
 }) {
+  const [openStates, setOpenStates] = React.useState<Record<string, boolean>>({})
+
+  React.useEffect(() => {
+    const savedStates = localStorage.getItem("sidebar-nav-main-states")
+    if (savedStates) {
+      setOpenStates(JSON.parse(savedStates))
+    }
+  }, [])
+
+  const handleOpenChange = (title: string, open: boolean) => {
+    const newStates = { ...openStates, [title]: open }
+    setOpenStates(newStates)
+    localStorage.setItem("sidebar-nav-main-states", JSON.stringify(newStates))
+  }
+
   return (
     <SidebarGroup>
       <SidebarGroupLabel>Platform</SidebarGroupLabel>
@@ -40,7 +57,8 @@ export function NavMain({
           <Collapsible
             key={item.title}
             asChild
-            defaultOpen={item.isActive}
+            open={openStates[item.title] ?? item.isActive}
+            onOpenChange={(open) => handleOpenChange(item.title, open)}
             className="group/collapsible"
           >
             <SidebarMenuItem>
