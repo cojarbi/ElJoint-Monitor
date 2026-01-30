@@ -3,16 +3,19 @@
 import { useState, useEffect } from 'react';
 import { InsertionLogUploader, InsertionLogRow, InsertionLogSummary } from '@/components/insertion-log/InsertionLogUploader';
 import { InsertionLogTable } from '@/components/insertion-log/InsertionLogTable';
+import { Button } from '@/components/ui/button';
 import { ScrollText, AlertCircle } from 'lucide-react';
 
 export default function InsertionLogPage() {
     const [results, setResults] = useState<InsertionLogRow[] | null>(null);
     const [summary, setSummary] = useState<InsertionLogSummary | null>(null);
+    const [fileName, setFileName] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleUploadComplete = (data: InsertionLogRow[], summary: InsertionLogSummary, fileName: string) => {
         setResults(data);
         setSummary(summary);
+        setFileName(fileName);
         setError(null);
 
         // Persist to localStorage
@@ -32,6 +35,7 @@ export default function InsertionLogPage() {
     const handleReset = () => {
         setResults(null);
         setSummary(null);
+        setFileName(null);
         setError(null);
 
         // Clear from localStorage
@@ -43,10 +47,11 @@ export default function InsertionLogPage() {
         try {
             const saved = localStorage.getItem('insertion_log_data');
             if (saved) {
-                const { data, summary } = JSON.parse(saved);
+                const { data, summary, fileName } = JSON.parse(saved);
                 if (data && summary) {
                     setResults(data);
                     setSummary(summary);
+                    if (fileName) setFileName(fileName);
                 }
             }
         } catch (e) {
@@ -70,12 +75,21 @@ export default function InsertionLogPage() {
                     </div>
                 </div>
                 {results && (
-                    <button
-                        onClick={handleReset}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Upload new file
-                    </button>
+                    <div className="flex items-center gap-4">
+                        {fileName && (
+                            <span className="text-sm font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg border">
+                                {fileName}
+                            </span>
+                        )}
+                        <Button
+                            variant="outline"
+                            onClick={handleReset}
+                            className="gap-2"
+                        >
+                            <ScrollText className="w-4 h-4" />
+                            Upload new file
+                        </Button>
+                    </div>
                 )}
             </div>
 

@@ -17,6 +17,7 @@ export interface NormalizedRow {
     program: string;
     orderedQuantity: number;
     durationSeconds: number;
+    schedule?: string;
     confidence: number;
 }
 
@@ -26,6 +27,7 @@ export interface BudgetSummary {
     programs: number;
     dateRange: { from: string; to: string } | null;
     confidenceDistribution?: Record<string, number>;
+    ignoredSheets?: string[];
 }
 
 export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUploaderProps) {
@@ -46,6 +48,7 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
         const allData: NormalizedRow[] = [];
         const errors: string[] = [];
         const processedFiles: string[] = [];
+        const allIgnoredSheets: string[] = [];
 
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
@@ -80,6 +83,9 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
                 if (result.data) {
                     allData.push(...result.data);
                     processedFiles.push(file.name);
+                    if (result.summary?.ignoredSheets) {
+                        allIgnoredSheets.push(...result.summary.ignoredSheets);
+                    }
                 }
             } catch (error) {
                 console.error(`Error processing ${file.name}:`, error);
@@ -111,9 +117,11 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
                 medios: uniqueMedios,
                 programs: uniquePrograms.length,
                 dateRange: dates.length > 0 ? { from: dates[0], to: dates[dates.length - 1] } : null,
-                confidenceDistribution: confidenceDist
+                confidenceDistribution: confidenceDist,
+                ignoredSheets: [...new Set(allIgnoredSheets)] // Deduplicate
             };
 
+            // Removed scoped result check
             onUploadComplete(allData, combinedSummary, processedFiles.join(', '));
         }
 

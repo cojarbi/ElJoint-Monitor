@@ -8,6 +8,7 @@ interface NormalizedRow {
     program: string;
     orderedQuantity: number;
     durationSeconds: number;
+    schedule?: string;
     confidence: number; // Added confidence field
 }
 
@@ -59,18 +60,88 @@ function findDayGridInRow(sheet: XLSX.WorkSheet, rowIndex: number): Map<number, 
         const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
         if (cell && typeof cell.v === 'number') {
             const val = Math.floor(cell.v);
-            // Look for sequence 1, 2, 3...
             if (val >= 1 && val <= 31) {
                 dayToCol.set(col, val);
-                if (val === 1 || dayToCol.has(val - 1)) {
-                    foundSequence++;
+                // Allow discontinuous sequence (e.g. 15, 16, 17...)
+                // We just want to see if we are finding multiple valid day numbers in this row
+                foundSequence++;
+            }
+        }
+    }
+
+    // Return map only if we found a reasonable sequence (e.g., at least 3 numbers)
+    return foundSequence >= 3 ? dayToCol : null;
+}
+
+// Check if a string looks like a time range (e.g. "6:00am-08:00am", "18:00 - 20:00")
+function isTimeRangeString(val: string): boolean {
+    if (!val) return false;
+    const v = val.toLowerCase().trim();
+    // Matches patterns like "6:00", "06:00am", "6:00-8:00"
+    return /[0-9]{1,2}:[0-9]{2}/.test(v);
+}
+
+// Robustly find the schedule column by checking headers AND data content
+function detectScheduleColumn(
+    sheet: XLSX.WorkSheet,
+    headerRowIndex: number,
+    dataStartRowIndex: number
+): number {
+    // 1. Try to find explicit headers around the header row
+    const headers = ['horario', 'hora', 'schedule', 'time', 'rotacion'];
+    const rowsToCheck = [
+        headerRowIndex,
+        headerRowIndex - 1,
+        headerRowIndex - 2,
+        headerRowIndex - 3 // Look up to 3 rows above
+    ];
+
+    for (const r of rowsToCheck) {
+        if (r < 0) continue;
+        for (let col = 0; col < 20; col++) {
+            const cell = sheet[XLSX.utils.encode_cell({ r, c: col })];
+            if (cell && typeof cell.v === 'string') {
+                const val = cell.v.toLowerCase().trim();
+                if (headers.some(h => val.includes(h))) {
+                    console.log(`Found Schedule header '${val}' at row ${r}, col ${col}`);
+                    return col;
                 }
             }
         }
     }
 
-    // Return map only if we found a reasonable sequence (e.g., at least 5 days)
-    return foundSequence >= 5 ? dayToCol : null;
+    // 2. Fallback: Scan data rows for time-like patterns
+    // Check first 10 columns
+    const candidateScores: Record<number, number> = {};
+    const maxRowsToScan = 10;
+
+    for (let r = dataStartRowIndex; r < dataStartRowIndex + maxRowsToScan; r++) {
+        for (let col = 0; col < 15; col++) {
+            const cell = sheet[XLSX.utils.encode_cell({ r, c: col })];
+            if (cell && typeof cell.v === 'string') {
+                if (isTimeRangeString(cell.v)) {
+                    candidateScores[col] = (candidateScores[col] || 0) + 1;
+                }
+            }
+        }
+    }
+
+    // Find best candidate
+    let bestCol = -1;
+    let maxScore = 0;
+    for (const [col, score] of Object.entries(candidateScores)) {
+        if (score > maxScore) {
+            maxScore = score;
+            bestCol = parseInt(col);
+        }
+    }
+
+    if (bestCol !== -1 && maxScore >= 2) { // At least 2 matches to be sure
+        console.log(`Detected Schedule column from data content at col ${bestCol} (score: ${maxScore})`);
+        return bestCol;
+    }
+
+    return -1;
 }
 
 function normalizeBudgetSheet(
@@ -109,7 +180,16 @@ function normalizeBudgetSheet(
         const nextBlock = sortedBlocks.find(b => b.headerRowIndex > headerRowIndex);
         const endRow = nextBlock ? nextBlock.headerRowIndex - 1 : range.e.r;
 
-        console.log(`Processing Block: ${month}/${year} | Rows ${dataStartRowIndex}-${endRow}`);
+        // Try to find Schedule/Horario column using improved detection
+        let scheduleCol = detectScheduleColumn(sheetData, headerRowIndex, dataStartRowIndex);
+
+        // Fallback: if stil not found, assume column 1 (B) if duration is 3 (D) as per observation
+        if (scheduleCol === -1) {
+            // Heuristic: If Program is Col 0, Schedule is likely Col 1 or 2
+            scheduleCol = 1;
+        }
+
+        console.log(`Processing Block: ${month}/${year} | Rows ${dataStartRowIndex}-${endRow} | Schedule Col: ${scheduleCol}`);
 
         for (let rowIndex = dataStartRowIndex; rowIndex <= endRow; rowIndex++) {
             const programCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })];
@@ -128,6 +208,15 @@ function normalizeBudgetSheet(
                 durationSeconds = parseInt(durStr) || 0;
             }
 
+            // Get Schedule
+            let schedule = '';
+            if (scheduleCol >= 0) {
+                const scheduleCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: scheduleCol })];
+                if (scheduleCell?.v) {
+                    schedule = String(scheduleCell.v).trim();
+                }
+            }
+
             // Extract Quantities using the dayMap for THIS block
             for (const [col, day] of dayMap.entries()) {
                 const qtyCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
@@ -142,6 +231,7 @@ function normalizeBudgetSheet(
                         program,
                         orderedQuantity: qtyCell.v,
                         durationSeconds,
+                        schedule,
                         confidence: blockConfidence || 90 // Default AI confidence if missing is 90
                     });
                 }
@@ -161,6 +251,7 @@ function normalizeBudgetSheetDynamic(
 
     let currentMonthYear: { month: number; year: number } | null = null;
     let currentDayMap: Map<number, number> | null = null;
+    let scheduleCol = -1;
 
     for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex++) {
         // 1. Try to find Month/Year Header
@@ -175,6 +266,9 @@ function normalizeBudgetSheetDynamic(
         const dayMap = findDayGridInRow(sheetData, rowIndex);
         if (dayMap) {
             currentDayMap = dayMap;
+            // Also try to find schedule column freshly for this new section
+            scheduleCol = detectScheduleColumn(sheetData, rowIndex, rowIndex + 1);
+            if (scheduleCol === -1) scheduleCol = 1; // Default
             continue;
         }
 
@@ -197,6 +291,15 @@ function normalizeBudgetSheetDynamic(
                 durationSeconds = parseInt(durStr) || 0;
             }
 
+            // Get Schedule
+            let schedule = '';
+            if (scheduleCol >= 0) {
+                const scheduleCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: scheduleCol })];
+                if (scheduleCell?.v) {
+                    schedule = String(scheduleCell.v).trim();
+                }
+            }
+
             // Extract Quantities
             let hasData = false;
             for (const [col, day] of currentDayMap.entries()) {
@@ -212,6 +315,7 @@ function normalizeBudgetSheetDynamic(
                         program,
                         orderedQuantity: qtyCell.v,
                         durationSeconds,
+                        schedule,
                         confidence: 85 // Fallback logic confidence
                     });
                     hasData = true;
@@ -256,8 +360,13 @@ export async function POST(request: NextRequest) {
         // TODO: Bring this values as a user config
         const allowedSheets = ['medcom', 'tvn'];
 
+        const ignoredSheets: string[] = [];
+
         for (const sheetName of workbook.SheetNames) {
-            if (!allowedSheets.includes(sheetName.toLowerCase())) continue;
+            if (!allowedSheets.includes(sheetName.toLowerCase())) {
+                ignoredSheets.push(sheetName);
+                continue;
+            }
 
             const sheet = workbook.Sheets[sheetName];
 
@@ -303,7 +412,8 @@ export async function POST(request: NextRequest) {
                 confidenceDistribution,
                 dateRange: allResults.length > 0
                     ? { from: allResults[0].date, to: allResults[allResults.length - 1].date }
-                    : null
+                    : null,
+                ignoredSheets // Include ignored sheets in summary
             }
         });
 

@@ -30,6 +30,7 @@ interface ReconciledRow extends NormalizedRow {
 interface StoredBudgetData {
     data: NormalizedRow[];
     fileName?: string;
+    fileNames?: string;
 }
 
 interface StoredInsertionData {
@@ -380,7 +381,7 @@ export default function SummaryPage() {
                         <div className="flex items-center gap-2">
                             <FileText className="w-4 h-4 text-emerald-500" />
                             <span className="font-medium truncate">
-                                {budgetData?.fileName || 'No file uploaded'}
+                                {budgetData?.fileNames || budgetData?.fileName || 'No file uploaded'}
                             </span>
                         </div>
                         <p className="text-xs text-muted-foreground mt-1">

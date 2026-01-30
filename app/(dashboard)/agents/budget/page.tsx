@@ -3,16 +3,19 @@
 import { useState, useEffect } from 'react';
 import { BudgetUploader, NormalizedRow, BudgetSummary as Summary } from '@/components/budget/BudgetUploader';
 import { BudgetResultsTable } from '@/components/budget/BudgetResultsTable';
+import { Button } from '@/components/ui/button';
 import { FileSpreadsheet, AlertCircle } from 'lucide-react';
 
 export default function BudgetPage() {
     const [results, setResults] = useState<NormalizedRow[] | null>(null);
     const [summary, setSummary] = useState<Summary | null>(null);
+    const [fileNames, setFileNames] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleUploadComplete = (data: NormalizedRow[], summary: Summary, fileNames: string) => {
         setResults(data);
         setSummary(summary);
+        setFileNames(fileNames);
         setError(null);
 
         // Persist to localStorage
@@ -32,6 +35,7 @@ export default function BudgetPage() {
     const handleReset = () => {
         setResults(null);
         setSummary(null);
+        setFileNames(null);
         setError(null);
 
         // Clear from localStorage
@@ -43,10 +47,11 @@ export default function BudgetPage() {
         try {
             const saved = localStorage.getItem('budget_data');
             if (saved) {
-                const { data, summary } = JSON.parse(saved);
+                const { data, summary, fileNames } = JSON.parse(saved);
                 if (data && summary) {
                     setResults(data);
                     setSummary(summary);
+                    if (fileNames) setFileNames(fileNames);
                 }
             }
         } catch (e) {
@@ -70,12 +75,21 @@ export default function BudgetPage() {
                     </div>
                 </div>
                 {results && (
-                    <button
-                        onClick={handleReset}
-                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
-                        Upload new file
-                    </button>
+                    <div className="flex items-center gap-4">
+                        {fileNames && (
+                            <span className="text-sm font-medium text-muted-foreground bg-muted/50 px-3 py-1.5 rounded-lg border">
+                                {fileNames}
+                            </span>
+                        )}
+                        <Button
+                            variant="outline"
+                            onClick={handleReset}
+                            className="gap-2"
+                        >
+                            <FileSpreadsheet className="w-4 h-4" />
+                            Upload new file
+                        </Button>
+                    </div>
                 )}
             </div>
 

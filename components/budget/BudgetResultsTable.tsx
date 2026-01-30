@@ -18,7 +18,7 @@ interface BudgetResultsTableProps {
     summary: Summary;
 }
 
-type SortField = 'date' | 'medio' | 'program' | 'orderedQuantity' | 'durationSeconds' | 'confidence';
+type SortField = 'date' | 'medio' | 'program' | 'orderedQuantity' | 'durationSeconds' | 'schedule' | 'confidence';
 type SortDirection = 'asc' | 'desc';
 
 export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
@@ -51,7 +51,9 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                 row.program.toLowerCase().includes(term) ||
                 row.program.toLowerCase().includes(term) ||
                 row.orderedQuantity.toString().includes(term) ||
-                row.durationSeconds?.toString().includes(term)
+                row.orderedQuantity.toString().includes(term) ||
+                row.durationSeconds?.toString().includes(term) ||
+                row.schedule?.toLowerCase().includes(term)
             );
         }
 
@@ -72,7 +74,11 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                     comparison = a.orderedQuantity - b.orderedQuantity;
                     break;
                 case 'durationSeconds':
+                case 'durationSeconds':
                     comparison = (a.durationSeconds || 0) - (b.durationSeconds || 0);
+                    break;
+                case 'schedule':
+                    comparison = (a.schedule || '').localeCompare(b.schedule || '');
                     break;
                 case 'confidence':
                     comparison = (a.confidence || 0) - (b.confidence || 0);
@@ -92,11 +98,11 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Medio', 'Program', 'Duration (s)', 'Ordered Quantity'];
+        const headers = ['Date', 'Medio', 'Program', 'Duration (s)', 'Schedule', 'Ordered Quantity'];
         const csvContent = [
             headers.join(','),
             ...filteredAndSortedData.map(row =>
-                [row.date, `"${row.medio}"`, `"${row.program}"`, row.durationSeconds || 0, row.orderedQuantity].join(',')
+                [row.date, `"${row.medio}"`, `"${row.program}"`, row.durationSeconds || 0, `"${row.schedule || ''}"`, row.orderedQuantity].join(',')
             )
         ].join('\n');
 
@@ -124,6 +130,11 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
 
     return (
         <div className="space-y-4">
+            {summary.ignoredSheets && summary.ignoredSheets.length > 0 && (
+                <div className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 p-4 rounded-xl text-sm">
+                    <strong>Note:</strong> The following sheets were ignored (only 'medcom' and 'tvn' are allowed): {summary.ignoredSheets.join(', ')}. Please contact admin if this is incorrect.
+                </div>
+            )}
             {/* Summary Cards */}
             <div className="grid grid-cols-5 gap-4 w-full">
                 <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl border border-blue-500/20">
@@ -204,6 +215,7 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                                 <SortableHeader field="medio">Medio</SortableHeader>
                                 <SortableHeader field="program">Program</SortableHeader>
                                 <SortableHeader field="durationSeconds">Duration</SortableHeader>
+                                <SortableHeader field="schedule">Schedule</SortableHeader>
                                 <SortableHeader field="orderedQuantity">Ordered Qty</SortableHeader>
                                 <SortableHeader field="confidence">AI Confidence</SortableHeader>
                             </TableRow>
@@ -220,6 +232,7 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                                         </TableCell>
                                         <TableCell>{row.program}</TableCell>
                                         <TableCell>{row.durationSeconds || 0}s</TableCell>
+                                        <TableCell className="text-muted-foreground">{row.schedule || '-'}</TableCell>
                                         <TableCell className="font-semibold">{row.orderedQuantity}</TableCell>
                                         <TableCell>
                                             <div className={`
