@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-import { mapInsertionColumnsAI, categorizeProgramsAI, ColumnMapping } from '@/lib/ai-insertion-mapper';
+import { mapInsertionColumnsAI, categorizeProgramsAI, ColumnMapping, ProgramInput, ProgramCategory } from '@/lib/ai-insertion-mapper';
 
 interface InsertionLogRow {
     date: string;
@@ -164,6 +164,28 @@ export async function POST(request: NextRequest) {
             };
         }
 
+        const medioAliasesRaw = (formData.get('medioAliases') as string) || '{}';
+        const programAliasesRaw = (formData.get('programAliases') as string) || '{}';
+
+        let medioAliases: Record<string, string> = {};
+        let programAliases: Record<string, string> = {};
+
+        try {
+            medioAliases = JSON.parse(medioAliasesRaw);
+            programAliases = JSON.parse(programAliasesRaw);
+        } catch (e) {
+            console.warn("Failed to parse aliases", e);
+        }
+
+        // Helper to normalize and apply alias
+        const applyAlias = (value: string, aliases: Record<string, string>) => {
+            if (!value) return value;
+            const normalized = value.trim().toUpperCase();
+            // Check alias map
+            if (aliases[normalized]) return aliases[normalized];
+            return value.trim(); // Just trim if no alias
+        };
+
         // 2. Extract Data & Identify Distinct Programs for AI Categorization
         const rawResults: any[] = [];
         const uniqueProgramsMap = new Map<string, { title: string, genre: string, franja: string }>();
@@ -172,50 +194,69 @@ export async function POST(request: NextRequest) {
             const row = jsonData[i] as (string | number)[];
             if (!row || row.length === 0) continue;
 
-            const vehiculo = String(row[colMap.vehiculo] || '').trim();
+            let vehiculo = String(row[colMap.vehiculo] || '').trim();
             const genero = String(row[colMap.genero] || '').trim();
             const franja = String(row[colMap.franja] || '').trim();
             const soporte = String(row[colMap.soporte] || '').trim();
 
+            // Apply Mappings
+            vehiculo = applyAlias(vehiculo, medioAliases);
+            // We could apply program aliases to 'genero' or 'soporte' depending on user intent
+            // The plan said "Program Category mappings" -> typically maps Genre -> Category
+            // But we should also check if we want to alias 'soporte' (Program Title).
+            // For now, let's map 'genero' as that drives categorization most often,
+            // OR the user might want to map specific 'soporte' titles to categories?
+            // "NOTICIAS -> Noticiero" implies Genre mapping.
+            const mappedGenre = applyAlias(genero, programAliases);
+
             if (!vehiculo && !soporte) continue;
 
             // Generate key for unique program
-            const progKey = `${soporte}|${genero}|${franja}`;
+            const progKey = `${soporte}|${mappedGenre}|${franja}`;
             if (!uniqueProgramsMap.has(progKey)) {
-                uniqueProgramsMap.set(progKey, { title: soporte, genre: genero, franja: franja });
+                uniqueProgramsMap.set(progKey, { title: soporte, genre: mappedGenre, franja: franja });
             }
 
             rawResults.push({
                 row,
                 vehiculo,
-                genero,
+                genero: mappedGenre,
                 franja,
                 soporte,
                 progKey
             });
         }
 
-        // 3. AI Categorization for Distinct Programs
+        // 3. AI Categorization for Distinct Programs with Stable IDs
         let programMappings: Record<string, { category: string, confidence: number }> = {};
         try {
-            const uniqueProgramsList = Array.from(uniqueProgramsMap.values());
+            const uniqueProgramsList = Array.from(uniqueProgramsMap.entries());
             console.log(`Categorizing ${uniqueProgramsList.length} unique programs with AI...`);
 
-            // Process in batches if needed, for now just one batch since unique count usually < 100
-            // If > 100, we'd need a loop. Assuming < 100 for this iteration to keep it simple.
-            const aiMappings = await categorizeProgramsAI(uniqueProgramsList.slice(0, 100), modelName);
+            // Generate stable IDs for programs
+            const programsWithIds: ProgramInput[] = uniqueProgramsList.slice(0, 100).map(([key, prog], index) => ({
+                id: `p${index}`,
+                title: prog.title,
+                genre: prog.genre,
+                franja: prog.franja
+            }));
 
+            // Create mapping from ID back to original key
+            const idToKeyMap = new Map<string, string>();
+            uniqueProgramsList.slice(0, 100).forEach(([key], index) => {
+                idToKeyMap.set(`p${index}`, key);
+            });
+
+            const aiMappings: ProgramCategory[] = await categorizeProgramsAI(programsWithIds, modelName);
+
+            // Map results back using IDs (guaranteed unique)
             aiMappings.forEach(m => {
-                // Reconstruct key to map back
-                // Note: The AI returns originalTitle. We might need to match carefully if titles duplicate across genres.
-                // A safer way is to map by title since that's what we sent.
-                // Ideally we'd send ID, but for now let's map by Title.
-                // Wait, the prompt takes uniquePrograms, so we can iterate uniqueProgramsList and find matches.
-
-                const originalInput = uniqueProgramsList.find(p => p.title === m.originalTitle);
-                if (originalInput) {
-                    const key = `${originalInput.title}|${originalInput.genre}|${originalInput.franja}`;
-                    programMappings[key] = { category: m.mappedCategory, confidence: m.confidence || 90 };
+                const originalKey = idToKeyMap.get(m.id);
+                if (originalKey) {
+                    programMappings[originalKey] = {
+                        category: m.mappedCategory,
+                        confidence: m.confidence || 90
+                    };
                 }
             });
 
@@ -240,10 +281,6 @@ export async function POST(request: NextRequest) {
             } else if (enableFallback) {
                 // Fallback Hit
                 mappedProgram = mapToProgramFallback(genero, franja);
-                confidence = 100; // Fallback rule is "certain" in its own logic, or distinct from AI confidence. Let's say 50?
-                // Actually, if we rely on fallback, let's mark confidence lower if it was supposed to be AI?
-                // Or just say 100 because it matched a hard rule?
-                // Let's use 85 for Hard Rules, 0 for Uncategorized.
                 if (mappedProgram === 'Sin Categoría') confidence = 0;
                 else confidence = 85;
             } else {

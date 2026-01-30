@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Play, Download, Search, CheckCircle2, AlertCircle, XCircle, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useAiModel } from '@/hooks/use-ai-settings';
+import { useAliasMappings } from '@/hooks/use-alias-mappings';
 
 interface ReconciledRow extends NormalizedRow {
     franja: string;
@@ -48,6 +49,7 @@ type SortDirection = 'asc' | 'desc';
 
 export default function SummaryPage() {
     const { model } = useAiModel();
+    const { getMappingObject } = useAliasMappings();
     const [budgetData, setBudgetData] = useState<StoredBudgetData | null>(null);
     const [insertionData, setInsertionData] = useState<StoredInsertionData | null>(null);
     const [reconciledData, setReconciledData] = useState<ReconciledRow[] | null>(null);
@@ -129,7 +131,15 @@ export default function SummaryPage() {
                 const response = await fetch('/api/reconcile-data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ budgetPrograms, insertionPrograms, budgetMedios, insertionMedios, modelName: model })
+                    body: JSON.stringify({
+                        budgetPrograms,
+                        insertionPrograms,
+                        budgetMedios,
+                        insertionMedios,
+                        modelName: model,
+                        medioAliases: getMappingObject('medios'),
+                        programAliases: getMappingObject('programs')
+                    })
                 });
                 const result = await response.json();
 

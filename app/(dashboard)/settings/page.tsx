@@ -2,6 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getUsers } from "@/app/actions/user"
 import { UsersClient } from "./users-client"
 import { AiSettingsCard } from "@/components/settings/ai-settings-card"
+import { AliasMappingsCard } from "@/components/settings/alias-mappings-card"
 
 export default async function SettingsPage() {
     const users = await getUsers()
@@ -15,6 +16,7 @@ export default async function SettingsPage() {
                 <TabsList>
                     <TabsTrigger value="users">Users</TabsTrigger>
                     <TabsTrigger value="general">General</TabsTrigger>
+                    <TabsTrigger value="mappings">Mappings</TabsTrigger>
                     <TabsTrigger value="billing">Billing</TabsTrigger>
                 </TabsList>
                 <TabsContent value="users" className="space-y-4">
@@ -22,6 +24,9 @@ export default async function SettingsPage() {
                 </TabsContent>
                 <TabsContent value="general" className="space-y-4">
                     <AiSettingsCard />
+                </TabsContent>
+                <TabsContent value="mappings" className="space-y-4">
+                    <AliasMappingsCard />
                 </TabsContent>
                 <TabsContent value="billing" className="space-y-4">
                     <div className="h-[200px] flex items-center justify-center border rounded-md">Billing Settings (Coming Soon)</div>

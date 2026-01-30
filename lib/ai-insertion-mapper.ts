@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { withAIRetry, AIResponseSchema } from './ai-json-utils';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
@@ -14,6 +15,7 @@ export interface ColumnMapping {
 }
 
 export interface ProgramCategory {
+    id: string;       // Stable ID for mapping
     originalTitle: string;
     genre: string;
     franja: string;
@@ -22,11 +24,36 @@ export interface ProgramCategory {
     reasoning: string;
 }
 
-// 1. AI Column Mapper
+// Input type for categorization (with ID)
+export interface ProgramInput {
+    id: string;
+    title: string;
+    genre: string;
+    franja: string;
+}
+
+// Column mapping schema validation
+const columnMappingSchema: AIResponseSchema = {
+    requiredKeys: ['vehiculo', 'genero', 'franja', 'soporte', 'fecha', 'duracion', 'insercion', 'confidence'],
+    allowedKeys: ['vehiculo', 'genero', 'franja', 'soporte', 'fecha', 'duracion', 'insercion', 'confidence'],
+    keyValidators: {
+        confidence: (v) => typeof v === 'number' && v >= 0 && v <= 100,
+        vehiculo: (v) => v === null || typeof v === 'string',
+        genero: (v) => v === null || typeof v === 'string',
+        franja: (v) => v === null || typeof v === 'string',
+        soporte: (v) => v === null || typeof v === 'string',
+        fecha: (v) => v === null || typeof v === 'string',
+        duracion: (v) => v === null || typeof v === 'string',
+        insercion: (v) => v === null || typeof v === 'string',
+    }
+};
+
+// 1. AI Column Mapper with validation and retry
 export async function mapInsertionColumnsAI(headers: string[], modelName: string = 'gemini-3-flash-preview'): Promise<ColumnMapping | null> {
-    const model = genAI.getGenerativeModel({ model: modelName });
     try {
         if (!process.env.GOOGLE_API_KEY) return null;
+
+        const model = genAI.getGenerativeModel({ model: modelName });
 
         const prompt = `
         You are an expert data analyst. I have a list of column headers from a TV Media Insertion Log.
@@ -58,78 +85,102 @@ export async function mapInsertionColumnsAI(headers: string[], modelName: string
         }
         
         If a field is not found, use null.
-        Strictly JSON only.
+        Strictly JSON only. No markdown formatting.
         `;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(text) as ColumnMapping;
+        const result = await withAIRetry<ColumnMapping>(model, prompt, columnMappingSchema, 1);
+
+        if (result.success) {
+            return result.data;
+        } else {
+            console.error("AI Column Mapping Failed after retries:", result.error);
+            return null;
+        }
     } catch (e) {
         console.error("AI Column Mapping Failed", e);
         return null;
     }
 }
 
-// 2. AI Program Categorizer (Fuzzy Matcher)
+// Standard categories for validation
+const STANDARD_CATEGORIES = [
+    'Novela Estelar', 'Novela Vespertina', 'Novela Matutina', 'Novela',
+    'Noticiero Matutino', 'Noticiero Estelar', 'Noticiero Vespertino',
+    'Variedades Mañana', 'Variedades Nocturno', 'Tarde Vespertina',
+    'Deportes', 'Loteria', 'Infantil', 'Pelicula', 'Other'
+];
+
+// 2. AI Program Categorizer with ID-based mapping
 export async function categorizeProgramsAI(
-    uniquePrograms: { title: string; genre: string; franja: string }[],
+    uniquePrograms: ProgramInput[],
     modelName: string = 'gemini-3-flash-preview'
 ): Promise<ProgramCategory[]> {
-    const model = genAI.getGenerativeModel({ model: modelName });
     try {
         if (!process.env.GOOGLE_API_KEY) return [];
+        if (uniquePrograms.length === 0) return [];
+
+        const model = genAI.getGenerativeModel({ model: modelName });
+
+        // Build schema that validates IDs exist and are from input
+        const inputIds = new Set(uniquePrograms.map(p => p.id));
+        const categorizationSchema: AIResponseSchema = {
+            arraySchema: {
+                requiredKeys: ['id', 'mappedCategory', 'confidence'],
+                keyValidators: {
+                    id: (v) => typeof v === 'string' && inputIds.has(v),
+                    mappedCategory: (v) => typeof v === 'string' && STANDARD_CATEGORIES.includes(v as string),
+                    confidence: (v) => typeof v === 'number' && v >= 0 && v <= 100,
+                }
+            }
+        };
 
         const prompt = `
         I have a list of TV programs with their raw Genre and Time Slot (Franja).
         Map each of them to one of my Standard Budget Categories.
         
-        Standard Categories:
-        - Novela Estelar
-        - Novela Vespertina
-        - Novela Matutina
-        - Novela
-        - Noticiero Matutino
-        - Noticiero Estelar
-        - Noticiero Vespertino
-        - Variedades Mañana
-        - Variedades Nocturno
-        - Tarde Vespertina
-        - Deportes
-        - Loteria
-        - Infantil
-        - Pelicula
-        - Other (if it doesn't fit)
-
-        Input Programs:
+        Standard Categories (use EXACTLY one of these):
+        ${STANDARD_CATEGORIES.map(c => `- ${c}`).join('\n')}
+        
+        Input Programs (each has a unique "id" you MUST include in your response):
         ${JSON.stringify(uniquePrograms.slice(0, 100))} 
         (Note: Processing batches of 100 max for efficiency)
+
+        IMPORTANT: Return the SAME "id" from the input for each program. This is critical for mapping.
 
         Return a JSON array:
         [
             {
-                "originalTitle": "...",
+                "id": "p0",
                 "mappedCategory": "Standard Category",
                 "confidence": <number 0-100>,
                 "reasoning": "brief reason"
             }
         ]
-        Strictly JSON only.
+        Strictly JSON only. No markdown formatting.
         `;
 
-        const result = await model.generateContent(prompt);
-        const text = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
-        const mappings = JSON.parse(text) as any[];
+        const result = await withAIRetry<Array<{ id: string; mappedCategory: string; confidence: number; reasoning?: string }>>(
+            model, prompt, categorizationSchema, 1
+        );
 
-        // Merge back with inputs to ensure alignment
-        return mappings.map(m => {
-            const original = uniquePrograms.find(p => p.title === m.originalTitle);
+        if (!result.success) {
+            console.error("AI Categorization Failed after retries:", result.error);
+            return [];
+        }
+
+        // Map results back using IDs (guaranteed unique match)
+        const inputMap = new Map(uniquePrograms.map(p => [p.id, p]));
+
+        return result.data.map(m => {
+            const original = inputMap.get(m.id);
             return {
-                originalTitle: m.originalTitle,
+                id: m.id,
+                originalTitle: original?.title || '',
                 genre: original?.genre || '',
                 franja: original?.franja || '',
                 mappedCategory: m.mappedCategory,
                 confidence: m.confidence,
-                reasoning: m.reasoning
+                reasoning: m.reasoning || ''
             };
         });
 

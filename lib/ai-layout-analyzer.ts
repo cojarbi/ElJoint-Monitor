@@ -1,16 +1,31 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as XLSX from 'xlsx';
+import { withAIRetry, AIResponseSchema } from './ai-json-utils';
 
 // Initialize Gemini client
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
-interface SheetBlock {
+export interface SheetBlock {
     month: number;
     year: number;
     headerRowIndex: number;  // The row containing 1, 2, 3...
     dataStartRowIndex: number; // First row of program data
     confidence: number;
 }
+
+// Schema for validating sheet blocks
+const sheetBlockSchema: AIResponseSchema = {
+    arraySchema: {
+        requiredKeys: ['month', 'year', 'headerRowIndex', 'dataStartRowIndex', 'confidence'],
+        keyValidators: {
+            month: (v) => typeof v === 'number' && v >= 1 && v <= 12,
+            year: (v) => typeof v === 'number' && v >= 2000 && v <= 2100,
+            headerRowIndex: (v) => typeof v === 'number' && v >= 0,
+            dataStartRowIndex: (v) => typeof v === 'number' && v >= 0,
+            confidence: (v) => typeof v === 'number' && v >= 0 && v <= 100,
+        }
+    }
+};
 
 export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.WorkSheet, modelName: string = 'gemini-3-flash-preview'): Promise<SheetBlock[]> {
     try {
@@ -70,15 +85,15 @@ export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.Work
         ${csvContext}
         `;
 
-        const result = await model.generateContent(prompt);
-        const responseText = result.response.text();
+        const result = await withAIRetry<SheetBlock[]>(model, prompt, sheetBlockSchema, 1);
 
-        // Clean up markdown code blocks if present
-        const jsonStr = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-
-        console.log(`AI Analysis for ${sheetName}:`, jsonStr);
-
-        return JSON.parse(jsonStr) as SheetBlock[];
+        if (result.success) {
+            console.log(`AI Analysis for ${sheetName}:`, JSON.stringify(result.data));
+            return result.data;
+        } else {
+            console.error(`AI Analysis for ${sheetName} failed:`, result.error);
+            return [];
+        }
 
     } catch (error) {
         console.error('Error in analyzeSheetLayout:', error);
