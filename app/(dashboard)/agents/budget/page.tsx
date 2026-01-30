@@ -10,14 +10,14 @@ export default function BudgetPage() {
     const [summary, setSummary] = useState<Summary | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const handleUploadComplete = (data: NormalizedRow[], summary: Summary, fileName: string) => {
+    const handleUploadComplete = (data: NormalizedRow[], summary: Summary, fileNames: string) => {
         setResults(data);
         setSummary(summary);
         setError(null);
 
         // Persist to localStorage
         try {
-            localStorage.setItem('budget_data', JSON.stringify({ data, summary, fileName }));
+            localStorage.setItem('budget_data', JSON.stringify({ data, summary, fileNames }));
         } catch (e) {
             console.error('Failed to save to localStorage', e);
         }

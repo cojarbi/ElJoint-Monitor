@@ -218,7 +218,9 @@ export default function SummaryPage() {
         if (!reconciledData) return null;
 
         const totalOrdered = reconciledData.reduce((sum, row) => sum + row.orderedQuantity, 0);
-        const totalInserted = reconciledData.reduce((sum, row) => sum + row.totalInserted, 0);
+        // Use insertionData directly to get the true total of insertions, regardless of matches
+        const totalInserted = insertionData?.data?.reduce((sum, row) => sum + (row.insertions || 0), 0) || 0;
+
         const underDelivered = reconciledData.filter(row => row.status === 'under' || row.status === 'missing').length;
         const overDelivered = reconciledData.filter(row => row.status === 'over').length;
         const missing = reconciledData.filter(row => row.status === 'missing').length;
@@ -237,7 +239,7 @@ export default function SummaryPage() {
             missing,
             confidenceDistribution
         };
-    }, [reconciledData]);
+    }, [reconciledData, insertionData]);
 
     const exportToCSV = () => {
         if (!reconciledData) return;

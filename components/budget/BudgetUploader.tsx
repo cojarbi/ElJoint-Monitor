@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Upload, FileSpreadsheet, X } from 'lucide-react';
+import { Upload, FileSpreadsheet, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 
 interface BudgetUploaderProps {
-    onUploadComplete: (data: NormalizedRow[], summary: BudgetSummary, fileName: string) => void;
+    onUploadComplete: (data: NormalizedRow[], summary: BudgetSummary, fileNames: string) => void;
     onUploadError: (error: string) => void;
 }
 
@@ -28,8 +29,9 @@ export interface BudgetSummary {
 
 export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUploaderProps) {
     const [isDragging, setIsDragging] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [progress, setProgress] = useState({ current: 0, total: 0, filename: '' });
+    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
     const validateFile = (file: File): boolean => {
         const validExtensions = ['.xls', '.xlsx'];
@@ -37,48 +39,90 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
         return validExtensions.some(ext => fileName.endsWith(ext));
     };
 
-    const handleUpload = useCallback(async (file: File) => {
-        if (!validateFile(file)) {
-            onUploadError('Please upload a valid Excel file (.xls or .xlsx)');
-            return;
-        }
+    const processFiles = async (files: File[]) => {
+        setIsProcessing(true);
+        const allData: NormalizedRow[] = [];
+        const errors: string[] = [];
+        const processedFiles: string[] = [];
 
-        setSelectedFile(file);
-        setIsLoading(true);
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            setProgress({ current: i + 1, total: files.length, filename: file.name });
 
-        try {
-            const formData = new FormData();
-            formData.append('file', file);
-
-            const response = await fetch('/api/normalize-budget', {
-                method: 'POST',
-                body: formData,
-            });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'Failed to process file');
+            if (!validateFile(file)) {
+                errors.push(`${file.name}: Invalid file type`);
+                continue;
             }
 
-            onUploadComplete(result.data, result.summary, file.name);
-        } catch (error) {
-            onUploadError(error instanceof Error ? error.message : 'Unknown error occurred');
-            setSelectedFile(null);
-        } finally {
-            setIsLoading(false);
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const response = await fetch('/api/normalize-budget', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Failed to process file');
+                }
+
+                if (result.data) {
+                    allData.push(...result.data);
+                    processedFiles.push(file.name);
+                }
+            } catch (error) {
+                console.error(`Error processing ${file.name}:`, error);
+                errors.push(`${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
         }
-    }, [onUploadComplete, onUploadError]);
+
+        setIsProcessing(false);
+        setProgress({ current: 0, total: 0, filename: '' });
+        setSelectedFiles([]);
+
+        if (allData.length > 0) {
+            // Recalculate summary based on all data
+            const uniqueMedios = [...new Set(allData.map(r => r.medio))];
+            const uniquePrograms = [...new Set(allData.map(r => r.program))];
+            const dates = allData.map(r => r.date).sort();
+
+            // Recalculate confidence distribution
+            const confidenceDist: Record<string, number> = {};
+            allData.forEach(r => {
+                const bucket = r.confidence >= 90 ? '90-100%' :
+                    r.confidence >= 70 ? '70-89%' :
+                        r.confidence >= 50 ? '50-69%' : 'Low (<50%)';
+                confidenceDist[bucket] = (confidenceDist[bucket] || 0) + 1;
+            });
+
+            const combinedSummary: BudgetSummary = {
+                totalRows: allData.length,
+                medios: uniqueMedios,
+                programs: uniquePrograms.length,
+                dateRange: dates.length > 0 ? { from: dates[0], to: dates[dates.length - 1] } : null,
+                confidenceDistribution: confidenceDist
+            };
+
+            onUploadComplete(allData, combinedSummary, processedFiles.join(', '));
+        }
+
+        if (errors.length > 0) {
+            onUploadError(`Errors occurred: ${errors.join('; ')}`);
+        }
+    };
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         setIsDragging(false);
 
-        const files = e.dataTransfer.files;
+        const files = Array.from(e.dataTransfer.files);
         if (files.length > 0) {
-            handleUpload(files[0]);
+            processFiles(files);
         }
-    }, [handleUpload]);
+    }, []);
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -93,12 +137,8 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (files && files.length > 0) {
-            handleUpload(files[0]);
+            processFiles(Array.from(files));
         }
-    };
-
-    const clearFile = () => {
-        setSelectedFile(null);
     };
 
     return (
@@ -114,60 +154,48 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
                         ? 'border-primary bg-primary/5 scale-[1.02]'
                         : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
                     }
-          ${isLoading ? 'pointer-events-none opacity-60' : 'cursor-pointer'}
+          ${isProcessing ? 'pointer-events-none opacity-90' : 'cursor-pointer'}
         `}
             >
                 <input
                     type="file"
                     accept=".xls,.xlsx"
+                    multiple // Allow multiple files
                     onChange={handleFileSelect}
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    disabled={isLoading}
+                    disabled={isProcessing}
                 />
 
                 <div className="flex flex-col items-center justify-center gap-4">
-                    {isLoading ? (
-                        <>
-                            <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
-                            <div className="text-center">
-                                <p className="text-lg font-medium">Processing...</p>
-                                <p className="text-sm text-muted-foreground">Normalizing budget data</p>
-                            </div>
-                        </>
-                    ) : selectedFile ? (
-                        <>
-                            <div className="flex items-center gap-3 px-4 py-3 bg-primary/10 rounded-lg">
-                                <FileSpreadsheet className="w-8 h-8 text-primary" />
-                                <div>
-                                    <p className="font-medium">{selectedFile.name}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                        {(selectedFile.size / 1024).toFixed(1)} KB
-                                    </p>
+                    {isProcessing ? (
+                        <div className="w-full max-w-xs space-y-4">
+                            <div className="flex items-center justify-center gap-3">
+                                <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                <div className="text-center">
+                                    <p className="font-medium">Processing File {progress.current} of {progress.total}</p>
+                                    <p className="text-xs text-muted-foreground truncate max-w-[200px]">{progress.filename}</p>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="ml-2 h-8 w-8"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        clearFile();
-                                    }}
-                                >
-                                    <X className="w-4 h-4" />
-                                </Button>
                             </div>
-                        </>
+                            <Progress value={(progress.current / progress.total) * 100} className="h-2" />
+                        </div>
                     ) : (
                         <>
                             <div className="p-4 bg-primary/10 rounded-full">
-                                <Upload className="w-8 h-8 text-primary" />
+                                {isDragging ? (
+                                    <Upload className="w-8 h-8 text-primary animate-bounce" />
+                                ) : (
+                                    <FileSpreadsheet className="w-8 h-8 text-primary" />
+                                )}
                             </div>
-                            <div className="text-center">
+                            <div className="text-center space-y-1">
                                 <p className="text-lg font-medium">
-                                    Drop your budget file here
+                                    {isDragging ? 'Drop files now' : 'Drop budget files here'}
                                 </p>
-                                <p className="text-sm text-muted-foreground mt-1">
+                                <p className="text-sm text-muted-foreground">
                                     or click to browse (.xls, .xlsx)
+                                </p>
+                                <p className="text-xs text-primary/70 font-medium pt-2">
+                                    Supports multiple files
                                 </p>
                             </div>
                         </>
