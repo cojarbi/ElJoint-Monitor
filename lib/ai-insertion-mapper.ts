@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
 
 export interface ColumnMapping {
     vehiculo: string; // Header name for Media/Channel
@@ -24,7 +23,8 @@ export interface ProgramCategory {
 }
 
 // 1. AI Column Mapper
-export async function mapInsertionColumnsAI(headers: string[]): Promise<ColumnMapping | null> {
+export async function mapInsertionColumnsAI(headers: string[], modelName: string = 'gemini-3-flash-preview'): Promise<ColumnMapping | null> {
+    const model = genAI.getGenerativeModel({ model: modelName });
     try {
         if (!process.env.GOOGLE_API_KEY) return null;
 
@@ -72,8 +72,10 @@ export async function mapInsertionColumnsAI(headers: string[]): Promise<ColumnMa
 
 // 2. AI Program Categorizer (Fuzzy Matcher)
 export async function categorizeProgramsAI(
-    uniquePrograms: { title: string; genre: string; franja: string }[]
+    uniquePrograms: { title: string; genre: string; franja: string }[],
+    modelName: string = 'gemini-3-flash-preview'
 ): Promise<ProgramCategory[]> {
+    const model = genAI.getGenerativeModel({ model: modelName });
     try {
         if (!process.env.GOOGLE_API_KEY) return [];
 

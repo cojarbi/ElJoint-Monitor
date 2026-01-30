@@ -4,7 +4,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { NormalizedRow } from '@/components/budget/BudgetUploader';
 import { InsertionLogRow } from '@/components/insertion-log/InsertionLogUploader';
 import {
-    Table,
     TableBody,
     TableCell,
     TableHead,
@@ -16,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Play, Download, Search, CheckCircle2, AlertCircle, XCircle, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { useAiModel } from '@/hooks/use-ai-settings';
 
 interface ReconciledRow extends NormalizedRow {
     franja: string;
@@ -47,6 +47,7 @@ type SortField = 'date' | 'medio' | 'program' | 'originalTitle' | 'durationSecon
 type SortDirection = 'asc' | 'desc';
 
 export default function SummaryPage() {
+    const { model } = useAiModel();
     const [budgetData, setBudgetData] = useState<StoredBudgetData | null>(null);
     const [insertionData, setInsertionData] = useState<StoredInsertionData | null>(null);
     const [reconciledData, setReconciledData] = useState<ReconciledRow[] | null>(null);
@@ -93,31 +94,94 @@ export default function SummaryPage() {
         }
     }, []);
 
-    const reconcileData = () => {
+    const [statusMessage, setStatusMessage] = useState('Processing...');
+
+
+
+    const reconcileData = async () => {
         if (!budgetData?.data || !insertionData?.data) return;
 
         setIsLoading(true);
+        setStatusMessage('Preparing data...');
+        setReconciledData(null); // Clear current data
 
-        // Simulate processing time
-        setTimeout(() => {
+        try {
             const budgetRows = budgetData.data;
             const insertionRows = insertionData.data;
 
-            const reconciled = budgetRows.map((budgetRow) => {
-                // Find matching insertions
-                // Matching logic: Date + Medio + Program (mapped)
-                const matches = insertionRows.filter(
-                    (log) =>
-                        log.date === budgetRow.date &&
-                        log.medio?.toLowerCase() === budgetRow.medio?.toLowerCase() &&
-                        (log.mappedProgram?.toLowerCase() === budgetRow.program?.toLowerCase())
-                );
+            // 1. Prepare lists for AI
+            const budgetPrograms = Array.from(new Set(budgetRows.map(r => r.program)));
+            const insertionPrograms = Array.from(new Set(insertionRows.map(r => r.mappedProgram)));
+            const budgetMedios = Array.from(new Set(budgetRows.map(r => r.medio).filter(Boolean)));
+            const insertionMedios = Array.from(new Set(insertionRows.map(r => r.medio).filter(Boolean)));
+
+            // 2. Call AI API
+            let programMap: Record<string, string | null> = {};
+            let medioMap: Record<string, string | null> = {};
+            setStatusMessage('AI Analyzing & Mapping...');
+
+            // ... inside reconcileData
+
+            // ... inside reconcileData
+
+            // ...
+            try {
+                const response = await fetch('/api/reconcile-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ budgetPrograms, insertionPrograms, budgetMedios, insertionMedios, modelName: model })
+                });
+                const result = await response.json();
+
+                if (result.programMapping) programMap = result.programMapping;
+                else if (result.mapping) programMap = result.mapping; // Fallback
+
+                if (result.medioMapping) medioMap = result.medioMapping;
+            } catch (error) {
+                console.error("AI Reconciliation API failed, falling back to direct match", error);
+            }
+
+            // 3. Reconcile
+            setStatusMessage('Finalizing Reconciliation...');
+
+            // Optimization: Index insertion rows by Date to avoid full scan per budget row
+            const insertionByDate: Record<string, InsertionLogRow[]> = {};
+            insertionRows.forEach(row => {
+                if (!insertionByDate[row.date]) insertionByDate[row.date] = [];
+                insertionByDate[row.date].push(row);
+            });
+
+            const reconciled = budgetRows.map((budgetRow, idx) => {
+                // Get potential matches by date (O(1) lookup)
+                const candidateMatches = insertionByDate[budgetRow.date] || [];
+
+                const matches = candidateMatches.filter((log) => {
+                    // Medio Check:
+                    // Normalize once (or ideally pre-normalize data, but this is fast enough for reduced set)
+                    const budgetMedioLower = budgetRow.medio?.toLowerCase();
+                    const directMedioMatch = log.medio?.toLowerCase() === budgetMedioLower;
+                    const mappedMedio = medioMap[log.medio];
+                    const aiMedioMatch = mappedMedio && mappedMedio.toLowerCase() === budgetMedioLower;
+                    const medioMatch = directMedioMatch || aiMedioMatch;
+
+                    if (!medioMatch) return false;
+
+                    // Program Check:
+                    const budgetProgramLower = budgetRow.program?.toLowerCase();
+                    const directMatch = log.mappedProgram?.toLowerCase() === budgetProgramLower;
+                    const mappedBudgetProgram = programMap[log.mappedProgram];
+                    const aiMatch = mappedBudgetProgram && mappedBudgetProgram.toLowerCase() === budgetProgramLower;
+                    const programMatch = directMatch || aiMatch;
+
+                    if (!programMatch) return false;
+
+                    return true;
+                });
 
                 const totalInserted = matches.reduce((sum, row) => sum + row.insertions, 0);
                 const uniqueFranjas = Array.from(new Set(matches.map((m) => m.franja).filter(Boolean))).join(', ');
                 const uniqueTitles = Array.from(new Set(matches.map((m) => m.originalTitle).filter(Boolean))).join(', ');
 
-                // Calculate reconciliation confidence
                 const avgConfidence = matches.length > 0
                     ? matches.reduce((sum, row) => sum + (row.confidence || 0), 0) / matches.length
                     : 0;
@@ -143,19 +207,18 @@ export default function SummaryPage() {
             setReconciledData(reconciled);
 
             // Persist results
-            try {
-                const stateToSave: StoredSummaryState = {
-                    reconciledData: reconciled,
-                    budgetFileName: budgetData.fileName,
-                    insertionFileName: insertionData.fileName
-                };
-                localStorage.setItem('summary_reconciliation_data', JSON.stringify(stateToSave));
-            } catch (e) {
-                console.error('Failed to save summary to localStorage', e);
-            }
+            const stateToSave: StoredSummaryState = {
+                reconciledData: reconciled,
+                budgetFileName: budgetData.fileName,
+                insertionFileName: insertionData.fileName
+            };
+            localStorage.setItem('summary_reconciliation_data', JSON.stringify(stateToSave));
 
+        } catch (e) {
+            console.error('Reconciliation failed', e);
+        } finally {
             setIsLoading(false);
-        }, 500);
+        }
     };
 
     const handleSort = (field: SortField) => {
@@ -273,7 +336,7 @@ export default function SummaryPage() {
 
     const SortableHeader = ({ field, children, center }: { field: SortField; children: React.ReactNode; center?: boolean }) => (
         <TableHead
-            className="cursor-pointer hover:bg-muted/50 transition-colors bg-background"
+            className="cursor-pointer hover:bg-muted/50 transition-colors bg-card"
             onClick={() => handleSort(field)}
         >
             <div className={`flex items-center gap-2 ${center ? 'justify-center' : ''}`}>
@@ -343,11 +406,14 @@ export default function SummaryPage() {
                         className="w-full h-full bg-white hover:bg-white text-primary border-2 border-primary hover:border-primary/80 transition-colors"
                     >
                         {isLoading ? (
-                            <span className="animate-pulse">Processing...</span>
+                            <span className="animate-pulse flex items-center gap-2">
+                                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+                                {statusMessage}
+                            </span>
                         ) : (
                             <span className="flex items-center gap-2">
                                 <Play className="w-5 h-5 fill-current" />
-                                {reconciledData ? 'Refresh Reconciliation' : 'Start Reconciliation'}
+                                Reconcile
                             </span>
                         )}
                     </Button>
@@ -421,8 +487,8 @@ export default function SummaryPage() {
 
                     <div className="rounded-xl border bg-card">
                         <div className="max-h-[600px] overflow-auto">
-                            <Table>
-                                <TableHeader className="sticky top-0 bg-card z-10">
+                            <table className="w-full caption-bottom text-sm">
+                                <TableHeader className="sticky top-0 z-20 bg-card shadow-sm">
                                     <TableRow>
                                         <SortableHeader field="date">Date</SortableHeader>
                                         <SortableHeader field="medio">Medio</SortableHeader>
@@ -477,7 +543,7 @@ export default function SummaryPage() {
                                         </TableRow>
                                     ))}
                                 </TableBody>
-                            </Table>
+                            </table>
                         </div>
                     </div>
                 </div>

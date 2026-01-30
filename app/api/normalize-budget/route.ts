@@ -76,7 +76,8 @@ function findDayGridInRow(sheet: XLSX.WorkSheet, rowIndex: number): Map<number, 
 function normalizeBudgetSheet(
     sheetData: XLSX.WorkSheet,
     medio: string,
-    aiBlocks: any[] = [] // Blocks detected by AI
+    aiBlocks: any[] = [], // Blocks detected by AI
+    enableFallback: boolean = true
 ): NormalizedRow[] {
     const results: NormalizedRow[] = [];
     const range = XLSX.utils.decode_range(sheetData['!ref'] || 'A1:A1');
@@ -86,6 +87,10 @@ function normalizeBudgetSheet(
 
     // Fallback: If no AI blocks or AI failed, use dynamic scanning
     if (sortedBlocks.length === 0) {
+        if (!enableFallback) {
+            console.warn("AI detected no blocks, and fallback is disabled. Skipping sheet.");
+            return [];
+        }
         return normalizeBudgetSheetDynamic(sheetData, medio);
     }
 
@@ -221,10 +226,12 @@ function normalizeBudgetSheetDynamic(
 export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
-        const file = formData.get('file') as File | null;
+        const file = formData.get('file') as File;
+        const modelName = (formData.get('modelName') as string) || 'gemini-3-flash-preview';
+        const enableFallback = formData.get('enableFallback') === 'true';
 
         if (!file) {
-            return NextResponse.json({ error: 'No file provided' }, { status: 400 });
+            return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
         }
 
         // Check file type
@@ -240,7 +247,6 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Read file buffer
         const arrayBuffer = await file.arrayBuffer();
         const workbook = XLSX.read(arrayBuffer, { type: 'array' });
 
@@ -259,14 +265,14 @@ export async function POST(request: NextRequest) {
             let aiBlocks: any[] = [];
             try {
                 console.log(`Analyzing layout for sheet: ${sheetName}...`);
-                aiBlocks = await analyzeSheetLayout(sheetName, sheet);
+                aiBlocks = await analyzeSheetLayout(sheetName, sheet, modelName);
                 console.log(`AI identified ${aiBlocks.length} blocks for ${sheetName}`);
             } catch (err) {
                 console.error(`AI Analysis failed for ${sheetName}, using dynamic fallback`, err);
             }
 
             // 2. Normalize using AI blocks (or fallback to scanning if empty)
-            const normalized = normalizeBudgetSheet(sheet, sheetName, aiBlocks);
+            const normalized = normalizeBudgetSheet(sheet, sheetName, aiBlocks, enableFallback);
             allResults.push(...normalized);
         }
 

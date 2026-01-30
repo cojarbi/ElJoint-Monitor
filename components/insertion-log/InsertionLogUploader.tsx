@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { Upload, FileSpreadsheet, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAiModel } from '@/hooks/use-ai-settings';
 
 interface InsertionLogUploaderProps {
     onUploadComplete: (data: InsertionLogRow[], summary: InsertionLogSummary, fileName: string) => void;
@@ -33,6 +34,7 @@ export interface InsertionLogSummary {
 }
 
 export function InsertionLogUploader({ onUploadComplete, onUploadError }: InsertionLogUploaderProps) {
+    const { model, enableFallback } = useAiModel();
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -52,9 +54,14 @@ export function InsertionLogUploader({ onUploadComplete, onUploadError }: Insert
         setSelectedFile(file);
         setIsLoading(true);
 
+        // ... inside handleUpload
+
+        // ...
         try {
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('modelName', model);
+            formData.append('enableFallback', String(enableFallback));
 
             const response = await fetch('/api/parse-insertion-log', {
                 method: 'POST',

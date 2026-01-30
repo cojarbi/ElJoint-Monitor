@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Upload, FileSpreadsheet, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { useAiModel } from '@/hooks/use-ai-settings';
 
 interface BudgetUploaderProps {
     onUploadComplete: (data: NormalizedRow[], summary: BudgetSummary, fileNames: string) => void;
@@ -28,6 +29,7 @@ export interface BudgetSummary {
 }
 
 export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUploaderProps) {
+    const { model, enableFallback } = useAiModel();
     const [isDragging, setIsDragging] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [progress, setProgress] = useState({ current: 0, total: 0, filename: '' });
@@ -54,9 +56,15 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
                 continue;
             }
 
+            // ... inside processFiles
+
+
+            // ...
             try {
                 const formData = new FormData();
                 formData.append('file', file);
+                formData.append('modelName', model);
+                formData.append('enableFallback', String(enableFallback));
 
                 const response = await fetch('/api/normalize-budget', {
                     method: 'POST',

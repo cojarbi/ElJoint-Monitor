@@ -12,7 +12,7 @@ interface SheetBlock {
     confidence: number;
 }
 
-export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.WorkSheet): Promise<SheetBlock[]> {
+export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.WorkSheet, modelName: string = 'gemini-3-flash-preview'): Promise<SheetBlock[]> {
     try {
         if (!process.env.GOOGLE_API_KEY) {
             console.warn('GOOGLE_API_KEY not set, skipping AI analysis');
@@ -41,7 +41,7 @@ export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.Work
         }
 
         const csvContext = rows.join('\n');
-        const model = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' });
+        const model = genAI.getGenerativeModel({ model: modelName });
 
         const prompt = `
         You are an expert data analyst parsing a TV Media Budget Excel file.

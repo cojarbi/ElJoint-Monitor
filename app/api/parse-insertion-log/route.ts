@@ -73,6 +73,8 @@ export async function POST(request: NextRequest) {
     try {
         const formData = await request.formData();
         const file = formData.get('file') as File | null;
+        const modelName = (formData.get('modelName') as string) || 'gemini-3-flash-preview';
+        const enableFallback = formData.get('enableFallback') === 'true';
 
         if (!file) {
             return NextResponse.json({ error: 'No file provided' }, { status: 400 });
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
         let aiColMap: ColumnMapping | null = null;
         try {
             console.log("Attempting AI Column Mapping...");
-            aiColMap = await mapInsertionColumnsAI(headers);
+            aiColMap = await mapInsertionColumnsAI(headers, modelName);
         } catch (err) {
             console.warn("AI Column mapping failed, using fallback.", err);
         }
@@ -143,6 +145,12 @@ export async function POST(request: NextRequest) {
             };
         } else {
             // Fallback
+            if (!enableFallback) {
+                return NextResponse.json(
+                    { error: 'AI Column Mapping failed and fallback is disabled.' },
+                    { status: 400 }
+                );
+            }
             console.log("Using Fallback Column Map");
             const hLower = headers.map(h => h.toLowerCase());
             colMap = {
@@ -195,7 +203,7 @@ export async function POST(request: NextRequest) {
 
             // Process in batches if needed, for now just one batch since unique count usually < 100
             // If > 100, we'd need a loop. Assuming < 100 for this iteration to keep it simple.
-            const aiMappings = await categorizeProgramsAI(uniqueProgramsList.slice(0, 100));
+            const aiMappings = await categorizeProgramsAI(uniqueProgramsList.slice(0, 100), modelName);
 
             aiMappings.forEach(m => {
                 // Reconstruct key to map back
@@ -229,7 +237,7 @@ export async function POST(request: NextRequest) {
                 // AI Hit
                 mappedProgram = programMappings[progKey].category;
                 confidence = programMappings[progKey].confidence;
-            } else {
+            } else if (enableFallback) {
                 // Fallback Hit
                 mappedProgram = mapToProgramFallback(genero, franja);
                 confidence = 100; // Fallback rule is "certain" in its own logic, or distinct from AI confidence. Let's say 50?
@@ -238,6 +246,10 @@ export async function POST(request: NextRequest) {
                 // Let's use 85 for Hard Rules, 0 for Uncategorized.
                 if (mappedProgram === 'Sin Categoría') confidence = 0;
                 else confidence = 85;
+            } else {
+                // No AI match and Fallback disabled
+                mappedProgram = 'Sin Categoría';
+                confidence = 0;
             }
 
             const fecha = row[colMap.fecha];
