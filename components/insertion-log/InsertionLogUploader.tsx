@@ -5,7 +5,7 @@ import { Upload, FileSpreadsheet, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface InsertionLogUploaderProps {
-    onUploadComplete: (data: InsertionLogRow[], summary: InsertionLogSummary) => void;
+    onUploadComplete: (data: InsertionLogRow[], summary: InsertionLogSummary, fileName: string) => void;
     onUploadError: (error: string) => void;
 }
 
@@ -29,6 +29,7 @@ export interface InsertionLogSummary {
     medios: string[];
     programs: number;
     dateRange: { from: string; to: string } | null;
+    confidenceDistribution?: Record<string, number>;
 }
 
 export function InsertionLogUploader({ onUploadComplete, onUploadError }: InsertionLogUploaderProps) {
@@ -66,7 +67,7 @@ export function InsertionLogUploader({ onUploadComplete, onUploadError }: Insert
                 throw new Error(result.error || 'Failed to process file');
             }
 
-            onUploadComplete(result.data, result.summary);
+            onUploadComplete(result.data, result.summary, file.name);
         } catch (error) {
             onUploadError(error instanceof Error ? error.message : 'Unknown error occurred');
             setSelectedFile(null);

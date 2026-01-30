@@ -11,14 +11,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, Search, ArrowUpDown } from 'lucide-react';
-import type { NormalizedRow, Summary } from './BudgetUploader';
+import type { NormalizedRow, BudgetSummary as Summary } from './BudgetUploader';
 
 interface BudgetResultsTableProps {
     data: NormalizedRow[];
     summary: Summary;
 }
 
-type SortField = 'date' | 'medio' | 'program' | 'orderedQuantity' | 'durationSeconds';
+type SortField = 'date' | 'medio' | 'program' | 'orderedQuantity' | 'durationSeconds' | 'confidence';
 type SortDirection = 'asc' | 'desc';
 
 export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
@@ -74,6 +74,9 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                 case 'durationSeconds':
                     comparison = (a.durationSeconds || 0) - (b.durationSeconds || 0);
                     break;
+                case 'confidence':
+                    comparison = (a.confidence || 0) - (b.confidence || 0);
+                    break;
             }
             return sortDirection === 'asc' ? comparison : -comparison;
         });
@@ -122,7 +125,7 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
     return (
         <div className="space-y-4">
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-5 gap-4 w-full">
                 <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl border border-blue-500/20">
                     <p className="text-sm text-muted-foreground">Total Rows</p>
                     <p className="text-2xl font-bold text-blue-600">{summary.totalRows}</p>
@@ -152,10 +155,25 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                         {summary.dateRange ? `${summary.dateRange.from} to ${summary.dateRange.to}` : 'N/A'}
                     </p>
                 </div>
-            </div>
+
+                <div className="p-4 bg-gradient-to-br from-teal-500/10 to-teal-600/5 rounded-xl border border-teal-500/20">
+                    <p className="text-sm text-muted-foreground">AI Confidence</p>
+                    <div className="mt-1 space-y-1">
+                        {summary.confidenceDistribution && Object.entries(summary.confidenceDistribution)
+                            .sort((a, b) => b[0].localeCompare(a[0]))
+                            .map(([label, count]) => (
+                                <div key={label} className="flex justify-between items-center text-xs">
+                                    <span>{label}</span>
+                                    <span className="font-bold text-teal-600">{count}</span>
+                                </div>
+                            ))}
+                        {!summary.confidenceDistribution && <span className="text-xs text-muted-foreground">No data</span>}
+                    </div>
+                </div>
+            </div >
 
             {/* Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+            < div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between" >
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
@@ -169,15 +187,15 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                     <Download className="w-4 h-4" />
                     Export CSV
                 </Button>
-            </div>
+            </div >
 
             {/* Results count */}
-            <p className="text-sm text-muted-foreground">
+            < p className="text-sm text-muted-foreground" >
                 Showing {filteredAndSortedData.length} of {data.length} rows
-            </p>
+            </p >
 
             {/* Table */}
-            <div className="rounded-xl border overflow-hidden">
+            < div className="rounded-xl border overflow-hidden" >
                 <div className="max-h-[500px] overflow-auto">
                     <table className="w-full caption-bottom text-sm">
                         <TableHeader className="sticky top-0 z-20 bg-background shadow-sm">
@@ -187,6 +205,7 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                                 <SortableHeader field="program">Program</SortableHeader>
                                 <SortableHeader field="durationSeconds">Duration</SortableHeader>
                                 <SortableHeader field="orderedQuantity">Ordered Qty</SortableHeader>
+                                <SortableHeader field="confidence">AI Confidence</SortableHeader>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -202,6 +221,16 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                                         <TableCell>{row.program}</TableCell>
                                         <TableCell>{row.durationSeconds || 0}s</TableCell>
                                         <TableCell className="font-semibold">{row.orderedQuantity}</TableCell>
+                                        <TableCell>
+                                            <div className={`
+                                                inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold
+                                                ${(row.confidence || 0) >= 90 ? 'bg-green-100 text-green-700' :
+                                                    (row.confidence || 0) >= 70 ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-red-100 text-red-700'}
+                                            `}>
+                                                {row.confidence || 0}%
+                                            </div>
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -214,7 +243,7 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                         </TableBody>
                     </table>
                 </div>
-            </div>
-        </div>
+            </div >
+        </div >
     );
 }

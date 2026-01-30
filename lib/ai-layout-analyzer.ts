@@ -59,7 +59,8 @@ export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.Work
             "month": <number 1-12>,
             "year": <number 4 digits>,
             "headerRowIndex": <number>, (the row index containing 1, 2, 3...)
-            "dataStartRowIndex": <number> (the first row containing actual program data after the header)
+            "dataStartRowIndex": <number> (the first row containing actual program data after the header),
+            "confidence": <number 0-100>
           }
         ]
         

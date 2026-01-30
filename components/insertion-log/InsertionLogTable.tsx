@@ -120,7 +120,7 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
     return (
         <div className="space-y-4">
             {/* Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-5 gap-4 w-full">
                 <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl border border-blue-500/20">
                     <p className="text-sm text-muted-foreground">Total Rows</p>
                     <p className="text-2xl font-bold text-blue-600">{summary.totalRows}</p>
@@ -162,6 +162,21 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                     <p className="text-xs text-muted-foreground mt-1">
                         {summary.programs} unique program categories
                     </p>
+                </div>
+
+                <div className="p-4 bg-gradient-to-br from-teal-500/10 to-teal-600/5 rounded-xl border border-teal-500/20">
+                    <p className="text-sm text-muted-foreground">AI Confidence</p>
+                    <div className="mt-1 space-y-1">
+                        {summary.confidenceDistribution && Object.entries(summary.confidenceDistribution)
+                            .sort((a, b) => b[0].localeCompare(a[0]))
+                            .map(([label, count]) => (
+                                <div key={label} className="flex justify-between items-center text-xs">
+                                    <span>{label}</span>
+                                    <span className="font-bold text-teal-600">{count}</span>
+                                </div>
+                            ))}
+                        {!summary.confidenceDistribution && <span className="text-xs text-muted-foreground">No data</span>}
+                    </div>
                 </div>
             </div>
 
@@ -247,36 +262,7 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                     </table>
                 </div>
             </div>
-            {/* Confidence Summary Table */}
-            {summary.confidenceDistribution && Object.keys(summary.confidenceDistribution).length > 0 && (
-                <div className="mt-8 mb-4">
-                    <h3 className="text-lg font-semibold mb-2 text-slate-700">AI Confidence Report</h3>
-                    <div className="bg-white rounded-lg border shadow-sm p-4 w-full md:w-1/2">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b">
-                                    <th className="text-left py-2 text-slate-500">Match Confidence</th>
-                                    <th className="text-right py-2 text-slate-500">Records</th>
-                                    <th className="text-right py-2 text-slate-500">% of Total</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {Object.entries(summary.confidenceDistribution)
-                                    .sort((a, b) => b[0].localeCompare(a[0])) // Sort high to low labels roughly
-                                    .map(([label, count]) => (
-                                        <tr key={label} className="border-b last:border-0 hover:bg-slate-50">
-                                            <td className="py-2 font-medium text-slate-700">{label}</td>
-                                            <td className="py-2 text-right text-slate-600">{count}</td>
-                                            <td className="py-2 text-right text-slate-400">
-                                                {((count / summary.totalRows) * 100).toFixed(1)}%
-                                            </td>
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
+
         </div>
     );
 }

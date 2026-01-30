@@ -8,6 +8,7 @@ interface NormalizedRow {
     program: string;
     orderedQuantity: number;
     durationSeconds: number;
+    confidence: number; // Added confidence field
 }
 
 // Helper to find month/year in a specific row
@@ -90,7 +91,7 @@ function normalizeBudgetSheet(
 
     // Process using AI Blocks
     for (const block of sortedBlocks) {
-        const { month, year, headerRowIndex, dataStartRowIndex } = block;
+        const { month, year, headerRowIndex, dataStartRowIndex, confidence: blockConfidence } = block;
 
         // Find the Day Map for this specific block's header row
         const dayMap = findDayGridInRow(sheetData, headerRowIndex);
@@ -135,7 +136,8 @@ function normalizeBudgetSheet(
                         medio,
                         program,
                         orderedQuantity: qtyCell.v,
-                        durationSeconds
+                        durationSeconds,
+                        confidence: blockConfidence || 90 // Default AI confidence if missing is 90
                     });
                 }
             }
@@ -204,7 +206,8 @@ function normalizeBudgetSheetDynamic(
                         medio,
                         program,
                         orderedQuantity: qtyCell.v,
-                        durationSeconds
+                        durationSeconds,
+                        confidence: 85 // Fallback logic confidence
                     });
                     hasData = true;
                 }
@@ -274,6 +277,15 @@ export async function POST(request: NextRequest) {
             return a.program.localeCompare(b.program);
         });
 
+        // Calculate confidence distribution
+        const confidenceDistribution: Record<string, number> = {};
+        allResults.forEach(r => {
+            const bucket = r.confidence >= 90 ? '90-100%' :
+                r.confidence >= 70 ? '70-89%' :
+                    r.confidence >= 50 ? '50-69%' : 'Low (<50%)';
+            confidenceDistribution[bucket] = (confidenceDistribution[bucket] || 0) + 1;
+        });
+
 
         return NextResponse.json({
             success: true,
@@ -282,6 +294,7 @@ export async function POST(request: NextRequest) {
                 totalRows: allResults.length,
                 medios: [...new Set(allResults.map(r => r.medio))],
                 programs: [...new Set(allResults.map(r => r.program))].length,
+                confidenceDistribution,
                 dateRange: allResults.length > 0
                     ? { from: allResults[0].date, to: allResults[allResults.length - 1].date }
                     : null

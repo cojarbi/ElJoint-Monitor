@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { BudgetUploader, NormalizedRow, Summary } from '@/components/budget/BudgetUploader';
+import { BudgetUploader, NormalizedRow, BudgetSummary as Summary } from '@/components/budget/BudgetUploader';
 import { BudgetResultsTable } from '@/components/budget/BudgetResultsTable';
 import { FileSpreadsheet, AlertCircle } from 'lucide-react';
 
@@ -10,14 +10,14 @@ export default function BudgetPage() {
     const [summary, setSummary] = useState<Summary | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const handleUploadComplete = (data: NormalizedRow[], summary: Summary) => {
+    const handleUploadComplete = (data: NormalizedRow[], summary: Summary, fileName: string) => {
         setResults(data);
         setSummary(summary);
         setError(null);
 
         // Persist to localStorage
         try {
-            localStorage.setItem('budget_data', JSON.stringify({ data, summary }));
+            localStorage.setItem('budget_data', JSON.stringify({ data, summary, fileName }));
         } catch (e) {
             console.error('Failed to save to localStorage', e);
         }

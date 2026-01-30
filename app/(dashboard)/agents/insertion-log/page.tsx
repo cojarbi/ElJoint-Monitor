@@ -10,14 +10,14 @@ export default function InsertionLogPage() {
     const [summary, setSummary] = useState<InsertionLogSummary | null>(null);
     const [error, setError] = useState<string | null>(null);
 
-    const handleUploadComplete = (data: InsertionLogRow[], summary: InsertionLogSummary) => {
+    const handleUploadComplete = (data: InsertionLogRow[], summary: InsertionLogSummary, fileName: string) => {
         setResults(data);
         setSummary(summary);
         setError(null);
 
         // Persist to localStorage
         try {
-            localStorage.setItem('insertion_log_data', JSON.stringify({ data, summary }));
+            localStorage.setItem('insertion_log_data', JSON.stringify({ data, summary, fileName }));
         } catch (e) {
             console.error('Failed to save to localStorage', e);
         }

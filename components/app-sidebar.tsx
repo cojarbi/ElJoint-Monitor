@@ -61,6 +61,10 @@ const data = {
           title: "Insertion Log",
           url: "/agents/insertion-log",
         },
+        {
+          title: "Summary",
+          url: "/agents/summary",
+        },
       ],
     },
 
