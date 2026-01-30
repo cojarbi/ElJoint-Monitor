@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BudgetUploader, NormalizedRow, Summary } from '@/components/budget/BudgetUploader';
 import { BudgetResultsTable } from '@/components/budget/BudgetResultsTable';
 import { FileSpreadsheet, AlertCircle } from 'lucide-react';
@@ -14,6 +14,13 @@ export default function BudgetPage() {
         setResults(data);
         setSummary(summary);
         setError(null);
+
+        // Persist to localStorage
+        try {
+            localStorage.setItem('budget_data', JSON.stringify({ data, summary }));
+        } catch (e) {
+            console.error('Failed to save to localStorage', e);
+        }
     };
 
     const handleUploadError = (errorMessage: string) => {
@@ -26,7 +33,26 @@ export default function BudgetPage() {
         setResults(null);
         setSummary(null);
         setError(null);
+
+        // Clear from localStorage
+        localStorage.removeItem('budget_data');
     };
+
+    // Load from localStorage on mount
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem('budget_data');
+            if (saved) {
+                const { data, summary } = JSON.parse(saved);
+                if (data && summary) {
+                    setResults(data);
+                    setSummary(summary);
+                }
+            }
+        } catch (e) {
+            console.error('Failed to load from localStorage', e);
+        }
+    }, []);
 
     return (
         <div className="flex flex-1 flex-col gap-6 p-6">

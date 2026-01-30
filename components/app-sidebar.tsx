@@ -13,8 +13,6 @@ import {
   Settings2,
   SquareTerminal,
   FileText,
-  Database,
-  BarChart,
   Settings,
 } from "lucide-react"
 
@@ -45,11 +43,7 @@ const data = {
     },
   ],
   navMain: [
-    {
-      title: "Data Input",
-      url: "/data-input",
-      icon: Database,
-    },
+
     {
       title: "Agents",
       url: "/agents",
@@ -69,11 +63,7 @@ const data = {
         },
       ],
     },
-    {
-      title: "Reports",
-      url: "/reports",
-      icon: BarChart,
-    },
+
     {
       title: "Settings",
       url: "/settings",

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { analyzeSheetLayout } from '@/lib/ai-layout-analyzer';
 
 interface NormalizedRow {
     date: string;
@@ -9,107 +10,204 @@ interface NormalizedRow {
     durationSeconds: number;
 }
 
-function parseMonthYear(sheetData: XLSX.WorkSheet): { month: number; year: number } | null {
-    // Look for month/year in the header area (rows 0-5)
+// Helper to find month/year in a specific row
+function findMonthYearInRow(sheet: XLSX.WorkSheet, rowIndex: number): { month: number; year: number } | null {
     const monthMap: Record<string, number> = {
         'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
         'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
-        'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+        'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12,
+        'ene': 1, 'feb': 2, 'mar': 3, 'abr': 4,
+        'may': 5, 'jun': 6, 'jul': 7, 'ago': 8,
+        'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12
     };
 
-    // Try to find month/year string in first few rows
-    for (let row = 0; row < 6; row++) {
-        for (let col = 0; col < 20; col++) {
-            const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
-            const cell = sheetData[cellRef];
-            if (cell && typeof cell.v === 'string') {
-                const text = cell.v.toLowerCase().trim();
-                // Match patterns like "noviembre 2025" or "nov 2025"
-                const match = text.match(/(\w+)\s+(\d{4})/);
-                if (match) {
-                    const monthStr = match[1];
-                    const year = parseInt(match[2]);
-                    for (const [name, num] of Object.entries(monthMap)) {
-                        if (name.startsWith(monthStr.substring(0, 3))) {
-                            return { month: num, year };
-                        }
+    // Check first 20 columns
+    for (let col = 0; col < 20; col++) {
+        const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
+        if (cell && typeof cell.v === 'string') {
+            const text = cell.v.toLowerCase().trim();
+            // Match "noviembre 2025", "nov 2025", "oct-2025", "diciembre 2024", "dic. 2024"
+            const match = text.match(/([a-z]+)[.\s-]*(\d{4})/);
+
+            if (match) {
+                const monthStr = match[1];
+                const year = parseInt(match[2]);
+
+                // Validate year range to avoid false positives
+                if (year < 2020 || year > 2030) continue;
+
+                for (const [name, num] of Object.entries(monthMap)) {
+                    if (monthStr.startsWith(name) || name.startsWith(monthStr)) {
+                        return { month: num, year };
                     }
                 }
             }
+
+            // Check for just month name if year might be in context (less reliable, sticking to month+year for now)
         }
     }
     return null;
 }
 
-function findDayColumns(sheetData: XLSX.WorkSheet): Map<number, number> {
-    // Find the row with day numbers (1, 2, 3, ... 31)
-    // Usually in row 4 or 5, starting from column 5
+// Helper to find day columns in a specific row
+function findDayGridInRow(sheet: XLSX.WorkSheet, rowIndex: number): Map<number, number> | null {
     const dayToCol = new Map<number, number>();
+    let foundSequence = 0;
 
-    for (let row = 3; row <= 5; row++) {
-        let foundDays = false;
-        for (let col = 5; col < 40; col++) {
-            const cellRef = XLSX.utils.encode_cell({ r: row, c: col });
-            const cell = sheetData[cellRef];
-            if (cell && typeof cell.v === 'number' && cell.v >= 1 && cell.v <= 31) {
-                dayToCol.set(col, Math.floor(cell.v));
-                foundDays = true;
+    for (let col = 0; col < 50; col++) {
+        const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
+        if (cell && typeof cell.v === 'number') {
+            const val = Math.floor(cell.v);
+            // Look for sequence 1, 2, 3...
+            if (val >= 1 && val <= 31) {
+                dayToCol.set(col, val);
+                if (val === 1 || dayToCol.has(val - 1)) {
+                    foundSequence++;
+                }
             }
         }
-        if (foundDays && dayToCol.size > 0) break;
     }
 
-    return dayToCol;
+    // Return map only if we found a reasonable sequence (e.g., at least 5 days)
+    return foundSequence >= 5 ? dayToCol : null;
 }
 
 function normalizeBudgetSheet(
     sheetData: XLSX.WorkSheet,
     medio: string,
-    monthYear: { month: number; year: number }
+    aiBlocks: any[] = [] // Blocks detected by AI
 ): NormalizedRow[] {
     const results: NormalizedRow[] = [];
-    const dayToCol = findDayColumns(sheetData);
-
-    if (dayToCol.size === 0) {
-        console.log(`No day columns found for sheet: ${medio}`);
-        return results;
-    }
-
     const range = XLSX.utils.decode_range(sheetData['!ref'] || 'A1:A1');
 
-    // Program rows typically start around row 7
-    for (let row = 6; row <= range.e.r; row++) {
-        const programCell = sheetData[XLSX.utils.encode_cell({ r: row, c: 0 })];
-        const program = programCell?.v?.toString().trim();
+    // Sort blocks by start row
+    const sortedBlocks = aiBlocks.sort((a, b) => a.headerRowIndex - b.headerRowIndex);
 
-        if (!program) continue;
+    // Fallback: If no AI blocks or AI failed, use dynamic scanning
+    if (sortedBlocks.length === 0) {
+        return normalizeBudgetSheetDynamic(sheetData, medio);
+    }
 
-        // Skip header-like rows
-        if (['prime time', 'day time', 'daytime'].includes(program.toLowerCase())) continue;
+    // Process using AI Blocks
+    for (const block of sortedBlocks) {
+        const { month, year, headerRowIndex, dataStartRowIndex } = block;
 
-        // Get duration from column 3 (e.g., "35ss", "10ss")
-        const durationCell = sheetData[XLSX.utils.encode_cell({ r: row, c: 3 })];
-        let durationSeconds = 0;
-        if (durationCell?.v) {
-            const durStr = String(durationCell.v).toLowerCase().replace(/[^0-9]/g, '');
-            durationSeconds = parseInt(durStr) || 0;
+        // Find the Day Map for this specific block's header row
+        const dayMap = findDayGridInRow(sheetData, headerRowIndex);
+        if (!dayMap) {
+            console.warn(`AI detected block at row ${headerRowIndex} but no day grid found.`);
+            continue;
         }
 
-        // Check each day column for quantities
-        for (const [col, day] of dayToCol.entries()) {
-            const qtyCell = sheetData[XLSX.utils.encode_cell({ r: row, c: col })];
-            if (qtyCell && typeof qtyCell.v === 'number' && qtyCell.v > 0) {
-                // Format date as YYYY-MM-DD
-                const date = new Date(monthYear.year, monthYear.month - 1, day);
-                const dateStr = date.toISOString().split('T')[0];
+        // Determine end row for this block (until next block or end of sheet)
+        const nextBlock = sortedBlocks.find(b => b.headerRowIndex > headerRowIndex);
+        const endRow = nextBlock ? nextBlock.headerRowIndex - 1 : range.e.r;
 
-                results.push({
-                    date: dateStr,
-                    medio,
-                    program,
-                    orderedQuantity: qtyCell.v,
-                    durationSeconds
-                });
+        console.log(`Processing Block: ${month}/${year} | Rows ${dataStartRowIndex}-${endRow}`);
+
+        for (let rowIndex = dataStartRowIndex; rowIndex <= endRow; rowIndex++) {
+            const programCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })];
+            const program = programCell?.v?.toString().trim();
+
+            if (!program) continue;
+
+            const ignoredKeywords = ['prime time', 'day time', 'daytime', 'horario', 'total', 'bonificacion', 'version :', 'cliente:', 'campaña:', 'total de inversion', 'itbms'];
+            if (ignoredKeywords.some(k => program.toLowerCase().includes(k))) continue;
+
+            // Get duration
+            const durationCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: 3 })];
+            let durationSeconds = 0;
+            if (durationCell?.v) {
+                const durStr = String(durationCell.v).toLowerCase().replace(/[^0-9]/g, '');
+                durationSeconds = parseInt(durStr) || 0;
+            }
+
+            // Extract Quantities using the dayMap for THIS block
+            for (const [col, day] of dayMap.entries()) {
+                const qtyCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
+                if (qtyCell && typeof qtyCell.v === 'number' && qtyCell.v > 0) {
+                    // Create date
+                    const date = new Date(year, month - 1, day);
+                    const dateStr = date.toISOString().split('T')[0];
+
+                    results.push({
+                        date: dateStr,
+                        medio,
+                        program,
+                        orderedQuantity: qtyCell.v,
+                        durationSeconds
+                    });
+                }
+            }
+        }
+    }
+
+    return results;
+}
+
+function normalizeBudgetSheetDynamic(
+    sheetData: XLSX.WorkSheet,
+    medio: string
+): NormalizedRow[] {
+    const results: NormalizedRow[] = [];
+    const range = XLSX.utils.decode_range(sheetData['!ref'] || 'A1:A1');
+
+    let currentMonthYear: { month: number; year: number } | null = null;
+    let currentDayMap: Map<number, number> | null = null;
+
+    for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex++) {
+        // 1. Try to find Month/Year Header
+        const monthYear = findMonthYearInRow(sheetData, rowIndex);
+        if (monthYear) {
+            currentMonthYear = monthYear;
+            currentDayMap = null; // Reset grid when new month is found
+            continue;
+        }
+
+        // 2. Try to find Day Grid (Overview 1..31)
+        const dayMap = findDayGridInRow(sheetData, rowIndex);
+        if (dayMap) {
+            currentDayMap = dayMap;
+            continue;
+        }
+
+        // 3. Process Data Rows (only if we have both context bits)
+        if (currentMonthYear && currentDayMap) {
+            const programCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })];
+            const program = programCell?.v?.toString().trim();
+
+            if (!program) continue;
+
+            // Skip header-like rows or summaries
+            const ignoredKeywords = ['prime time', 'day time', 'daytime', 'horario', 'total', 'bonificacion', 'version :', 'cliente:', 'campaña:'];
+            if (ignoredKeywords.some(k => program.toLowerCase().includes(k))) continue;
+
+            // Get duration
+            const durationCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: 3 })]; // Assuming Col 3 is duration
+            let durationSeconds = 0;
+            if (durationCell?.v) {
+                const durStr = String(durationCell.v).toLowerCase().replace(/[^0-9]/g, '');
+                durationSeconds = parseInt(durStr) || 0;
+            }
+
+            // Extract Quantities
+            let hasData = false;
+            for (const [col, day] of currentDayMap.entries()) {
+                const qtyCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
+                if (qtyCell && typeof qtyCell.v === 'number' && qtyCell.v > 0) {
+                    // Create date
+                    const date = new Date(currentMonthYear.year, currentMonthYear.month - 1, day);
+                    const dateStr = date.toISOString().split('T')[0];
+
+                    results.push({
+                        date: dateStr,
+                        medio,
+                        program,
+                        orderedQuantity: qtyCell.v,
+                        durationSeconds
+                    });
+                    hasData = true;
+                }
             }
         }
     }
@@ -145,19 +243,27 @@ export async function POST(request: NextRequest) {
 
         const allResults: NormalizedRow[] = [];
 
-        // Process each sheet (excluding Resumen)
+        // Process each sheet
+        // TODO: Bring this values as a user config
+        const allowedSheets = ['medcom', 'tvn'];
+
         for (const sheetName of workbook.SheetNames) {
-            if (sheetName.toLowerCase() === 'resumen') continue;
+            if (!allowedSheets.includes(sheetName.toLowerCase())) continue;
 
             const sheet = workbook.Sheets[sheetName];
-            const monthYear = parseMonthYear(sheet);
 
-            if (!monthYear) {
-                console.log(`Could not parse month/year for sheet: ${sheetName}`);
-                continue;
+            // 1. Try AI Analysis
+            let aiBlocks: any[] = [];
+            try {
+                console.log(`Analyzing layout for sheet: ${sheetName}...`);
+                aiBlocks = await analyzeSheetLayout(sheetName, sheet);
+                console.log(`AI identified ${aiBlocks.length} blocks for ${sheetName}`);
+            } catch (err) {
+                console.error(`AI Analysis failed for ${sheetName}, using dynamic fallback`, err);
             }
 
-            const normalized = normalizeBudgetSheet(sheet, sheetName, monthYear);
+            // 2. Normalize using AI blocks (or fallback to scanning if empty)
+            const normalized = normalizeBudgetSheet(sheet, sheetName, aiBlocks);
             allResults.push(...normalized);
         }
 
@@ -167,6 +273,7 @@ export async function POST(request: NextRequest) {
             if (a.medio !== b.medio) return a.medio.localeCompare(b.medio);
             return a.program.localeCompare(b.program);
         });
+
 
         return NextResponse.json({
             success: true,
