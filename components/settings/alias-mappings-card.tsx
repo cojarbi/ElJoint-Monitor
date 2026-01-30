@@ -116,7 +116,7 @@ function MappingSection({ title, description, mappings, onAdd, onRemove }: Mappi
 }
 
 export function AliasMappingsCard() {
-    const { medios, programs, addMedioAlias, removeMedioAlias, addProgramAlias, removeProgramAlias, isLoaded } = useAliasMappings();
+    const { medios, addMedioAlias, removeMedioAlias, isLoaded } = useAliasMappings();
 
     if (!isLoaded) return null;
 
@@ -139,16 +139,6 @@ export function AliasMappingsCard() {
                     mappings={medios}
                     onAdd={addMedioAlias}
                     onRemove={removeMedioAlias}
-                />
-
-                <div className="h-px bg-border" />
-
-                <MappingSection
-                    title="Program Category Mappings"
-                    description="Standardize genres or program types (e.g. 'NOTICIAS' -> 'Noticiero')."
-                    mappings={programs}
-                    onAdd={addProgramAlias}
-                    onRemove={removeProgramAlias}
                 />
             </CardContent>
         </Card>

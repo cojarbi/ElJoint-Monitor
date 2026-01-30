@@ -28,6 +28,7 @@ export interface InsertionLogSummary {
     totalInsertions: number;
     insertionsByMedio: Record<string, number>;
     insertionsByProgram: Record<string, number>;
+    insertionsByGenre: Record<string, number>;
     medios: string[];
     programs: number;
     dateRange: { from: string; to: string } | null;
@@ -65,7 +66,6 @@ export function InsertionLogUploader({ onUploadComplete, onUploadError }: Insert
             formData.append('modelName', model);
             formData.append('enableFallback', String(enableFallback));
             formData.append('medioAliases', JSON.stringify(getMappingObject('medios')));
-            formData.append('programAliases', JSON.stringify(getMappingObject('programs')));
 
             const response = await fetch('/api/parse-insertion-log', {
                 method: 'POST',

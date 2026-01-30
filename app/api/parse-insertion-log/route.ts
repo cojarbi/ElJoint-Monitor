@@ -165,14 +165,11 @@ export async function POST(request: NextRequest) {
         }
 
         const medioAliasesRaw = (formData.get('medioAliases') as string) || '{}';
-        const programAliasesRaw = (formData.get('programAliases') as string) || '{}';
 
         let medioAliases: Record<string, string> = {};
-        let programAliases: Record<string, string> = {};
 
         try {
             medioAliases = JSON.parse(medioAliasesRaw);
-            programAliases = JSON.parse(programAliasesRaw);
         } catch (e) {
             console.warn("Failed to parse aliases", e);
         }
@@ -201,13 +198,9 @@ export async function POST(request: NextRequest) {
 
             // Apply Mappings
             vehiculo = applyAlias(vehiculo, medioAliases);
-            // We could apply program aliases to 'genero' or 'soporte' depending on user intent
-            // The plan said "Program Category mappings" -> typically maps Genre -> Category
-            // But we should also check if we want to alias 'soporte' (Program Title).
-            // For now, let's map 'genero' as that drives categorization most often,
-            // OR the user might want to map specific 'soporte' titles to categories?
-            // "NOTICIAS -> Noticiero" implies Genre mapping.
-            const mappedGenre = applyAlias(genero, programAliases);
+
+            // Program Aliases removed. Using raw genre.
+            const mappedGenre = genero;
 
             if (!vehiculo && !soporte) continue;
 
@@ -332,6 +325,7 @@ export async function POST(request: NextRequest) {
         // Calculate summary
         const insertionsByMedio: Record<string, number> = {};
         const insertionsByProgram: Record<string, number> = {};
+        const insertionsByGenre: Record<string, number> = {};
         let totalInsertions = 0;
 
         // Confidence Distribution
@@ -340,6 +334,7 @@ export async function POST(request: NextRequest) {
         finalResults.forEach(r => {
             insertionsByMedio[r.medio] = (insertionsByMedio[r.medio] || 0) + r.insertions;
             insertionsByProgram[r.mappedProgram] = (insertionsByProgram[r.mappedProgram] || 0) + r.insertions;
+            insertionsByGenre[r.genre] = (insertionsByGenre[r.genre] || 0) + r.insertions;
             totalInsertions += r.insertions;
 
             // Bucket confidence
@@ -357,6 +352,7 @@ export async function POST(request: NextRequest) {
                 totalInsertions,
                 insertionsByMedio,
                 insertionsByProgram,
+                insertionsByGenre,
                 medios: Object.keys(insertionsByMedio),
                 programs: Object.keys(insertionsByProgram).length,
                 confidenceDistribution,

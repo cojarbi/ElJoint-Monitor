@@ -138,8 +138,7 @@ export default function SummaryPage() {
                         budgetMedios,
                         insertionMedios,
                         modelName: model,
-                        medioAliases: getMappingObject('medios'),
-                        programAliases: getMappingObject('programs')
+                        medioAliases: getMappingObject('medios')
                     })
                 });
                 const result = await response.json();

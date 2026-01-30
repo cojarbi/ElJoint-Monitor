@@ -18,7 +18,7 @@ interface InsertionLogTableProps {
     summary: InsertionLogSummary;
 }
 
-type SortField = 'date' | 'medio' | 'mappedProgram' | 'originalTitle' | 'insertions' | 'duration' | 'confidence';
+type SortField = 'date' | 'medio' | 'originalTitle' | 'insertions' | 'duration' | 'confidence';
 type SortDirection = 'asc' | 'desc';
 
 export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
@@ -34,7 +34,6 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
             filtered = data.filter(row =>
                 row.date.includes(term) ||
                 row.medio.toLowerCase().includes(term) ||
-                row.mappedProgram.toLowerCase().includes(term) ||
                 row.originalTitle.toLowerCase().includes(term) ||
                 row.genre.toLowerCase().includes(term) ||
                 row.franja.toLowerCase().includes(term)
@@ -50,9 +49,7 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                 case 'medio':
                     comparison = a.medio.localeCompare(b.medio);
                     break;
-                case 'mappedProgram':
-                    comparison = a.mappedProgram.localeCompare(b.mappedProgram);
-                    break;
+
                 case 'originalTitle':
                     comparison = a.originalTitle.localeCompare(b.originalTitle);
                     break;
@@ -80,11 +77,11 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Medio', 'Mapped Program', 'Original Title', 'Genre', 'Franja', 'Duration', 'Insertions'];
+        const headers = ['Date', 'Medio', 'Original Title', 'Genre', 'Franja', 'Duration', 'Insertions'];
         const csvContent = [
             headers.join(','),
             ...filteredAndSortedData.map(row =>
-                [row.date, `"${row.medio}"`, `"${row.mappedProgram}"`, `"${row.originalTitle}"`, `"${row.genre}"`, `"${row.franja}"`, row.duration, row.insertions].join(',')
+                [row.date, `"${row.medio}"`, `"${row.originalTitle}"`, `"${row.genre}"`, `"${row.franja}"`, row.duration, row.insertions].join(',')
             )
         ].join('\n');
 
@@ -110,12 +107,12 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
         </TableHead>
     );
 
-    // Get top programs by insertions
-    const topPrograms = useMemo(() => {
-        return Object.entries(summary.insertionsByProgram)
+    // Get top genres by insertions
+    const topGenres = useMemo(() => {
+        return Object.entries(summary.insertionsByGenre || {})
             .sort((a, b) => b[1] - a[1])
             .slice(0, 5);
-    }, [summary.insertionsByProgram]);
+    }, [summary.insertionsByGenre]);
 
     return (
         <div className="space-y-4">
@@ -143,11 +140,11 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                 </div>
 
                 <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl border border-purple-500/20">
-                    <p className="text-sm text-muted-foreground">Top Mapped Programs</p>
+                    <p className="text-sm text-muted-foreground">Top Genres</p>
                     <div className="mt-1 space-y-1">
-                        {topPrograms.map(([program, count]) => (
-                            <div key={program} className="flex justify-between items-center">
-                                <span className="text-xs font-medium truncate max-w-[120px]">{program}</span>
+                        {topGenres.map(([genre, count]) => (
+                            <div key={genre} className="flex justify-between items-center">
+                                <span className="text-xs font-medium truncate max-w-[120px]">{genre}</span>
                                 <span className="text-xs font-bold text-purple-600">{count}</span>
                             </div>
                         ))}
@@ -210,7 +207,6 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                             <TableRow className="hover:bg-background">
                                 <SortableHeader field="date">Date</SortableHeader>
                                 <SortableHeader field="medio">Medio</SortableHeader>
-                                <SortableHeader field="mappedProgram">Mapped Program</SortableHeader>
                                 <SortableHeader field="originalTitle">Original Title</SortableHeader>
                                 <TableHead>Genre</TableHead>
                                 <TableHead>Franja</TableHead>
@@ -227,11 +223,6 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                                         <TableCell>
                                             <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium">
                                                 {row.medio}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="px-2 py-1 bg-purple-500/10 text-purple-600 rounded-md text-sm font-medium">
-                                                {row.mappedProgram}
                                             </span>
                                         </TableCell>
                                         <TableCell className="max-w-[200px] truncate">{row.originalTitle}</TableCell>
