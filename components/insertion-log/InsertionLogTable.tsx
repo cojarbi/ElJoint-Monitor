@@ -18,7 +18,7 @@ interface InsertionLogTableProps {
     summary: InsertionLogSummary;
 }
 
-type SortField = 'date' | 'medio' | 'mappedProgram' | 'originalTitle' | 'insertions' | 'duration';
+type SortField = 'date' | 'medio' | 'mappedProgram' | 'originalTitle' | 'insertions' | 'duration' | 'confidence';
 type SortDirection = 'asc' | 'desc';
 
 export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
@@ -61,6 +61,9 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                     break;
                 case 'duration':
                     comparison = a.duration - b.duration;
+                    break;
+                case 'confidence':
+                    comparison = (a.confidence || 0) - (b.confidence || 0);
                     break;
             }
             return sortDirection === 'asc' ? comparison : -comparison;
@@ -198,6 +201,7 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                                 <TableHead>Franja</TableHead>
                                 <SortableHeader field="duration">Duration</SortableHeader>
                                 <SortableHeader field="insertions">Insertions</SortableHeader>
+                                <SortableHeader field="confidence">AI Confidence</SortableHeader>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -220,6 +224,16 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                                         <TableCell className="text-muted-foreground text-sm">{row.franja}</TableCell>
                                         <TableCell>{row.duration}s</TableCell>
                                         <TableCell className="font-semibold">{row.insertions}</TableCell>
+                                        <TableCell>
+                                            <div className={`
+                                                inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold
+                                                ${(row.confidence || 0) >= 90 ? 'bg-green-100 text-green-700' :
+                                                    (row.confidence || 0) >= 70 ? 'bg-yellow-100 text-yellow-700' :
+                                                        'bg-red-100 text-red-700'}
+                                            `}>
+                                                {row.confidence || 0}%
+                                            </div>
+                                        </TableCell>
                                     </TableRow>
                                 ))
                             ) : (
@@ -233,6 +247,36 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                     </table>
                 </div>
             </div>
+            {/* Confidence Summary Table */}
+            {summary.confidenceDistribution && Object.keys(summary.confidenceDistribution).length > 0 && (
+                <div className="mt-8 mb-4">
+                    <h3 className="text-lg font-semibold mb-2 text-slate-700">AI Confidence Report</h3>
+                    <div className="bg-white rounded-lg border shadow-sm p-4 w-full md:w-1/2">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="border-b">
+                                    <th className="text-left py-2 text-slate-500">Match Confidence</th>
+                                    <th className="text-right py-2 text-slate-500">Records</th>
+                                    <th className="text-right py-2 text-slate-500">% of Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {Object.entries(summary.confidenceDistribution)
+                                    .sort((a, b) => b[0].localeCompare(a[0])) // Sort high to low labels roughly
+                                    .map(([label, count]) => (
+                                        <tr key={label} className="border-b last:border-0 hover:bg-slate-50">
+                                            <td className="py-2 font-medium text-slate-700">{label}</td>
+                                            <td className="py-2 text-right text-slate-600">{count}</td>
+                                            <td className="py-2 text-right text-slate-400">
+                                                {((count / summary.totalRows) * 100).toFixed(1)}%
+                                            </td>
+                                        </tr>
+                                    ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

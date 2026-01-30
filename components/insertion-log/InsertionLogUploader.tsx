@@ -18,6 +18,7 @@ export interface InsertionLogRow {
     franja: string;
     duration: number;
     insertions: number;
+    confidence: number;
 }
 
 export interface InsertionLogSummary {

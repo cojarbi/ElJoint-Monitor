@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { mapInsertionColumnsAI, categorizeProgramsAI, ColumnMapping } from '@/lib/ai-insertion-mapper';
 
 interface InsertionLogRow {
     date: string;
@@ -10,10 +11,11 @@ interface InsertionLogRow {
     franja: string;
     duration: number;
     insertions: number;
+    confidence: number; // Added confidence field
 }
 
-// Fuzzy mapping: Genre + Franja -> Budget Program Category
-function mapToProgram(genre: string, franja: string): string {
+// Existing fallback logic
+function mapToProgramFallback(genre: string, franja: string): string {
     const g = genre?.toUpperCase().trim() || '';
     const f = franja?.toUpperCase().trim() || '';
 
@@ -92,20 +94,16 @@ export async function POST(request: NextRequest) {
         // Look for the main data sheet
         const targetSheets = ['Consulta Infoanalisis', 'Consulta', 'Data'];
         let dataSheet: XLSX.WorkSheet | null = null;
-        let sheetName = '';
 
         for (const name of workbook.SheetNames) {
             if (targetSheets.some(t => name.toLowerCase().includes(t.toLowerCase()))) {
                 dataSheet = workbook.Sheets[name];
-                sheetName = name;
                 break;
             }
         }
 
-        // Fallback to first sheet
         if (!dataSheet && workbook.SheetNames.length > 0) {
-            sheetName = workbook.SheetNames[0];
-            dataSheet = workbook.Sheets[sheetName];
+            dataSheet = workbook.Sheets[workbook.SheetNames[0]];
         }
 
         if (!dataSheet) {
@@ -119,49 +117,148 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'No data rows found' }, { status: 400 });
         }
 
-        // Find column indices from header row
-        const headers = (jsonData[0] as string[]).map(h => String(h || '').toLowerCase().trim());
+        // 1. Identify Columns (AI > Fallback)
+        const headers = (jsonData[0] as string[]).map(h => String(h || '').trim());
+        let colMap: Record<string, number> = {};
 
-        const colIndices = {
-            vehiculo: headers.findIndex(h => h.includes('vehiculo')),
-            genero: headers.findIndex(h => h.includes('genero')),
-            franja: headers.findIndex(h => h.includes('franja')),
-            soporte: headers.findIndex(h => h.includes('soporte')),
-            fecha: headers.findIndex(h => h.includes('fecha')),
-            duracion: headers.findIndex(h => h.includes('duracion') || h.includes('duración')),
-            insercion: headers.findIndex(h => h.includes('insercion') || h.includes('inserción')),
-        };
+        // Attempt AI mapping
+        let aiColMap: ColumnMapping | null = null;
+        try {
+            console.log("Attempting AI Column Mapping...");
+            aiColMap = await mapInsertionColumnsAI(headers);
+        } catch (err) {
+            console.warn("AI Column mapping failed, using fallback.", err);
+        }
 
-        const results: InsertionLogRow[] = [];
+        if (aiColMap && aiColMap.confidence > 70) {
+            console.log("Using AI Column Map:", aiColMap);
+            colMap = {
+                vehiculo: headers.indexOf(aiColMap.vehiculo),
+                genero: headers.indexOf(aiColMap.genero),
+                franja: headers.indexOf(aiColMap.franja),
+                soporte: headers.indexOf(aiColMap.soporte),
+                fecha: headers.indexOf(aiColMap.fecha),
+                duracion: headers.indexOf(aiColMap.duracion),
+                insercion: headers.indexOf(aiColMap.insercion),
+            };
+        } else {
+            // Fallback
+            console.log("Using Fallback Column Map");
+            const hLower = headers.map(h => h.toLowerCase());
+            colMap = {
+                vehiculo: hLower.findIndex(h => h.includes('vehiculo')),
+                genero: hLower.findIndex(h => h.includes('genero')),
+                franja: hLower.findIndex(h => h.includes('franja')),
+                soporte: hLower.findIndex(h => h.includes('soporte')),
+                fecha: hLower.findIndex(h => h.includes('fecha')),
+                duracion: hLower.findIndex(h => h.includes('duracion') || h.includes('duración')),
+                insercion: hLower.findIndex(h => h.includes('insercion') || h.includes('inserción')),
+            };
+        }
 
-        // Process data rows
+        // 2. Extract Data & Identify Distinct Programs for AI Categorization
+        const rawResults: any[] = [];
+        const uniqueProgramsMap = new Map<string, { title: string, genre: string, franja: string }>();
+
         for (let i = 1; i < jsonData.length; i++) {
             const row = jsonData[i] as (string | number)[];
             if (!row || row.length === 0) continue;
 
-            const vehiculo = String(row[colIndices.vehiculo] || '').trim();
-            const genero = String(row[colIndices.genero] || '').trim();
-            const franja = String(row[colIndices.franja] || '').trim();
-            const soporte = String(row[colIndices.soporte] || '').trim();
-            const fecha = row[colIndices.fecha];
-            const duracion = Number(row[colIndices.duracion]) || 0;
-            const insercion = Number(row[colIndices.insercion]) || 1;
+            const vehiculo = String(row[colMap.vehiculo] || '').trim();
+            const genero = String(row[colMap.genero] || '').trim();
+            const franja = String(row[colMap.franja] || '').trim();
+            const soporte = String(row[colMap.soporte] || '').trim();
 
-            if (!vehiculo && !soporte) continue; // Skip empty rows
+            if (!vehiculo && !soporte) continue;
+
+            // Generate key for unique program
+            const progKey = `${soporte}|${genero}|${franja}`;
+            if (!uniqueProgramsMap.has(progKey)) {
+                uniqueProgramsMap.set(progKey, { title: soporte, genre: genero, franja: franja });
+            }
+
+            rawResults.push({
+                row,
+                vehiculo,
+                genero,
+                franja,
+                soporte,
+                progKey
+            });
+        }
+
+        // 3. AI Categorization for Distinct Programs
+        let programMappings: Record<string, { category: string, confidence: number }> = {};
+        try {
+            const uniqueProgramsList = Array.from(uniqueProgramsMap.values());
+            console.log(`Categorizing ${uniqueProgramsList.length} unique programs with AI...`);
+
+            // Process in batches if needed, for now just one batch since unique count usually < 100
+            // If > 100, we'd need a loop. Assuming < 100 for this iteration to keep it simple.
+            const aiMappings = await categorizeProgramsAI(uniqueProgramsList.slice(0, 100));
+
+            aiMappings.forEach(m => {
+                // Reconstruct key to map back
+                // Note: The AI returns originalTitle. We might need to match carefully if titles duplicate across genres.
+                // A safer way is to map by title since that's what we sent.
+                // Ideally we'd send ID, but for now let's map by Title.
+                // Wait, the prompt takes uniquePrograms, so we can iterate uniqueProgramsList and find matches.
+
+                const originalInput = uniqueProgramsList.find(p => p.title === m.originalTitle);
+                if (originalInput) {
+                    const key = `${originalInput.title}|${originalInput.genre}|${originalInput.franja}`;
+                    programMappings[key] = { category: m.mappedCategory, confidence: m.confidence || 90 };
+                }
+            });
+
+        } catch (err) {
+            console.warn("AI Categorization failed, using full fallback", err);
+        }
+
+        // 4. Build Final Results
+        const results: InsertionLogRow[] = [];
+
+        for (const item of rawResults) {
+            const { row, vehiculo, genero, franja, soporte, progKey } = item;
+
+            // Determine Category & Confidence
+            let mappedProgram = '';
+            let confidence = 0;
+
+            if (programMappings[progKey]) {
+                // AI Hit
+                mappedProgram = programMappings[progKey].category;
+                confidence = programMappings[progKey].confidence;
+            } else {
+                // Fallback Hit
+                mappedProgram = mapToProgramFallback(genero, franja);
+                confidence = 100; // Fallback rule is "certain" in its own logic, or distinct from AI confidence. Let's say 50?
+                // Actually, if we rely on fallback, let's mark confidence lower if it was supposed to be AI?
+                // Or just say 100 because it matched a hard rule?
+                // Let's use 85 for Hard Rules, 0 for Uncategorized.
+                if (mappedProgram === 'Sin Categoría') confidence = 0;
+                else confidence = 85;
+            }
+
+            const fecha = row[colMap.fecha];
+            const duracion = Number(row[colMap.duracion]) || 0;
+            const insercion = Number(row[colMap.insercion]) || 1;
 
             results.push({
                 date: parseDate(fecha as string | number),
                 medio: vehiculo,
-                mappedProgram: mapToProgram(genero, franja),
+                mappedProgram,
                 originalTitle: soporte,
                 genre: genero,
                 franja: franja,
                 duration: duracion,
                 insertions: insercion,
+                confidence
             });
         }
 
-        // Group rows and sum insertions
+
+        // Group rows and sum assertions
         const groupedResults = results.reduce((acc, curr) => {
             const key = `${curr.date}|${curr.medio}|${curr.mappedProgram}|${curr.originalTitle}|${curr.genre}|${curr.franja}|${curr.duration}`;
 
@@ -169,8 +266,8 @@ export async function POST(request: NextRequest) {
                 acc[key] = { ...curr };
             } else {
                 acc[key].insertions += curr.insertions;
+                // Average confidence weighted? Or just keep first? Keep first is fine for now.
             }
-
             return acc;
         }, {} as Record<string, InsertionLogRow>);
 
@@ -188,10 +285,19 @@ export async function POST(request: NextRequest) {
         const insertionsByProgram: Record<string, number> = {};
         let totalInsertions = 0;
 
+        // Confidence Distribution
+        const confidenceDistribution: Record<string, number> = {};
+
         finalResults.forEach(r => {
             insertionsByMedio[r.medio] = (insertionsByMedio[r.medio] || 0) + r.insertions;
             insertionsByProgram[r.mappedProgram] = (insertionsByProgram[r.mappedProgram] || 0) + r.insertions;
             totalInsertions += r.insertions;
+
+            // Bucket confidence
+            const bucket = r.confidence >= 90 ? '90-100%' :
+                r.confidence >= 70 ? '70-89%' :
+                    r.confidence >= 50 ? '50-69%' : 'Low (<50%)';
+            confidenceDistribution[bucket] = (confidenceDistribution[bucket] || 0) + 1; // Count rows
         });
 
         return NextResponse.json({
@@ -204,6 +310,7 @@ export async function POST(request: NextRequest) {
                 insertionsByProgram,
                 medios: Object.keys(insertionsByMedio),
                 programs: Object.keys(insertionsByProgram).length,
+                confidenceDistribution,
                 dateRange: finalResults.length > 0
                     ? { from: finalResults[0].date, to: finalResults[finalResults.length - 1].date }
                     : null,
