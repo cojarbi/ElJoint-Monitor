@@ -1,0 +1,23 @@
+Log Aired,Example,Explanation,Requested
+Monitoreo (Aired) - Anunciante,TAMEK SA,Who is the customer,
+Monitoreo (Aired) - Categoria,ALM. DEPARTAMENTO HOGAR Y ROPA,What product category is the ad,
+Monitoreo (Aired) - Marca,EL FUERTE,What’s the customer business,
+Monitoreo (Aired) - Version,24 HORAS,What’s the internal name of the campaign,
+Monitoreo (Aired) - Medio,TELEVISION NACIONAL,What Medium,
+Monitoreo (Aired) - Mes,12,Month,
+Monitoreo (Aired) - Producto,EL FUERTE ALM DEPTOS,What kind of business,
+Monitoreo (Aired) - Vehiculo,TVN,Which Media Channel was used,Tab name minutes tab resumes tab
+Monitoreo (Aired) - Subsector,"ALM. DEPARTAMENTOS, SUPERMERCADOS",Business Subsector,
+Monitoreo (Aired) - Agencia,LA UNION PUBLICITAR,Agency,
+Monitoreo (Aired) - Sector,"COMERCIO, TURISMO",Business Sector,
+Monitoreo (Aired) - Refereid,617849.0,ID,
+Monitoreo (Aired) - Genero,VARIEDADES,"Genre (Cine, Culturales, Dramatizado, 
+Juegos de azar, Noticias, Novelas, Variedades, etc )",Presupuesto (Bought) - Program / Section
+Monitoreo (Aired) - Franja,MANANA,"Madrugada, Mañana, Tarde, Nocturno",Presupuesto (Bought) - Horario (Time)
+Monitoreo (Aired) - Soporte,JELOU,Note added by the agency,
+Monitoreo (Aired) - Obs,,,
+Monitoreo (Aired) - FECHA,20251223,Panama Date,"Presupuesto (Bought) - Days Pattern (L-V, etc)"
+Monitoreo (Aired) - Disco,,Disco,
+Monitoreo (Aired) - Duración_Real,7.0,Duration,Presupuesto (Bought) - Duración
+Monitoreo (Aired) - Total_Inversion,526.68,Invested amount,
+Monitoreo (Aired) - Total_Insercion,1.0,How many infections happened,Presupuesto (Bought) - Day 1 to Day 31

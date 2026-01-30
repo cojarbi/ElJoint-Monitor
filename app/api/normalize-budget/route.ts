@@ -6,6 +6,7 @@ interface NormalizedRow {
     medio: string;
     program: string;
     orderedQuantity: number;
+    durationSeconds: number;
 }
 
 function parseMonthYear(sheetData: XLSX.WorkSheet): { month: number; year: number } | null {
@@ -86,6 +87,14 @@ function normalizeBudgetSheet(
         // Skip header-like rows
         if (['prime time', 'day time', 'daytime'].includes(program.toLowerCase())) continue;
 
+        // Get duration from column 3 (e.g., "35ss", "10ss")
+        const durationCell = sheetData[XLSX.utils.encode_cell({ r: row, c: 3 })];
+        let durationSeconds = 0;
+        if (durationCell?.v) {
+            const durStr = String(durationCell.v).toLowerCase().replace(/[^0-9]/g, '');
+            durationSeconds = parseInt(durStr) || 0;
+        }
+
         // Check each day column for quantities
         for (const [col, day] of dayToCol.entries()) {
             const qtyCell = sheetData[XLSX.utils.encode_cell({ r: row, c: col })];
@@ -98,7 +107,8 @@ function normalizeBudgetSheet(
                     date: dateStr,
                     medio,
                     program,
-                    orderedQuantity: qtyCell.v
+                    orderedQuantity: qtyCell.v,
+                    durationSeconds
                 });
             }
         }

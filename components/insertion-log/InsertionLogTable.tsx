@@ -11,51 +11,36 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Download, Search, ArrowUpDown } from 'lucide-react';
-import type { NormalizedRow, Summary } from './BudgetUploader';
+import type { InsertionLogRow, InsertionLogSummary } from './InsertionLogUploader';
 
-interface BudgetResultsTableProps {
-    data: NormalizedRow[];
-    summary: Summary;
+interface InsertionLogTableProps {
+    data: InsertionLogRow[];
+    summary: InsertionLogSummary;
 }
 
-type SortField = 'date' | 'medio' | 'program' | 'orderedQuantity' | 'durationSeconds';
+type SortField = 'date' | 'medio' | 'mappedProgram' | 'originalTitle' | 'insertions' | 'duration';
 type SortDirection = 'asc' | 'desc';
 
-export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
+export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortField, setSortField] = useState<SortField>('date');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
-    // Calculate spots per medio
-    const spotsByMedio = useMemo(() => {
-        const spots: Record<string, number> = {};
-        data.forEach(row => {
-            spots[row.medio] = (spots[row.medio] || 0) + row.orderedQuantity;
-        });
-        return spots;
-    }, [data]);
-
-    const totalSpots = useMemo(() => {
-        return Object.values(spotsByMedio).reduce((sum, val) => sum + val, 0);
-    }, [spotsByMedio]);
-
     const filteredAndSortedData = useMemo(() => {
         let filtered = data;
 
-        // Apply search filter
         if (searchTerm) {
             const term = searchTerm.toLowerCase();
             filtered = data.filter(row =>
                 row.date.includes(term) ||
                 row.medio.toLowerCase().includes(term) ||
-                row.program.toLowerCase().includes(term) ||
-                row.program.toLowerCase().includes(term) ||
-                row.orderedQuantity.toString().includes(term) ||
-                row.durationSeconds?.toString().includes(term)
+                row.mappedProgram.toLowerCase().includes(term) ||
+                row.originalTitle.toLowerCase().includes(term) ||
+                row.genre.toLowerCase().includes(term) ||
+                row.franja.toLowerCase().includes(term)
             );
         }
 
-        // Apply sorting
         return [...filtered].sort((a, b) => {
             let comparison = 0;
             switch (sortField) {
@@ -65,14 +50,17 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                 case 'medio':
                     comparison = a.medio.localeCompare(b.medio);
                     break;
-                case 'program':
-                    comparison = a.program.localeCompare(b.program);
+                case 'mappedProgram':
+                    comparison = a.mappedProgram.localeCompare(b.mappedProgram);
                     break;
-                case 'orderedQuantity':
-                    comparison = a.orderedQuantity - b.orderedQuantity;
+                case 'originalTitle':
+                    comparison = a.originalTitle.localeCompare(b.originalTitle);
                     break;
-                case 'durationSeconds':
-                    comparison = (a.durationSeconds || 0) - (b.durationSeconds || 0);
+                case 'insertions':
+                    comparison = a.insertions - b.insertions;
+                    break;
+                case 'duration':
+                    comparison = a.duration - b.duration;
                     break;
             }
             return sortDirection === 'asc' ? comparison : -comparison;
@@ -89,11 +77,11 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Medio', 'Program', 'Duration (s)', 'Ordered Quantity'];
+        const headers = ['Date', 'Medio', 'Mapped Program', 'Original Title', 'Genre', 'Franja', 'Duration', 'Insertions'];
         const csvContent = [
             headers.join(','),
             ...filteredAndSortedData.map(row =>
-                [row.date, `"${row.medio}"`, `"${row.program}"`, row.durationSeconds || 0, row.orderedQuantity].join(',')
+                [row.date, `"${row.medio}"`, `"${row.mappedProgram}"`, `"${row.originalTitle}"`, `"${row.genre}"`, `"${row.franja}"`, row.duration, row.insertions].join(',')
             )
         ].join('\n');
 
@@ -101,23 +89,30 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
         const link = document.createElement('a');
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
-        link.setAttribute('download', 'normalized_budget.csv');
+        link.setAttribute('download', 'insertion_log_mapped.csv');
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
     };
 
-    const SortableHeader = ({ field, children, center }: { field: SortField; children: React.ReactNode; center?: boolean }) => (
+    const SortableHeader = ({ field, children }: { field: SortField; children: React.ReactNode }) => (
         <TableHead
             className="cursor-pointer hover:bg-muted/50 transition-colors bg-background"
             onClick={() => handleSort(field)}
         >
-            <div className={`flex items-center gap-2 ${center ? 'justify-center' : ''}`}>
+            <div className="flex items-center gap-2">
                 {children}
                 <ArrowUpDown className={`w-4 h-4 ${sortField === field ? 'text-primary' : 'text-muted-foreground'}`} />
             </div>
         </TableHead>
     );
+
+    // Get top programs by insertions
+    const topPrograms = useMemo(() => {
+        return Object.entries(summary.insertionsByProgram)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+    }, [summary.insertionsByProgram]);
 
     return (
         <div className="space-y-4">
@@ -127,29 +122,42 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                     <p className="text-sm text-muted-foreground">Total Rows</p>
                     <p className="text-2xl font-bold text-blue-600">{summary.totalRows}</p>
                 </div>
+
                 <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl border border-green-500/20">
-                    <p className="text-sm text-muted-foreground">Medios</p>
+                    <p className="text-sm text-muted-foreground">Insertions by Medio</p>
                     <div className="mt-1 space-y-1">
                         {summary.medios.map(medio => (
                             <div key={medio} className="flex justify-between items-center">
                                 <span className="text-sm font-medium">{medio}</span>
-                                <span className="text-sm font-bold text-green-600">{spotsByMedio[medio] || 0}</span>
+                                <span className="text-sm font-bold text-green-600">{summary.insertionsByMedio[medio] || 0}</span>
                             </div>
                         ))}
                         <div className="flex justify-between items-center pt-1 border-t border-green-500/20">
                             <span className="text-sm font-semibold">Total</span>
-                            <span className="text-lg font-bold text-green-600">{totalSpots}</span>
+                            <span className="text-lg font-bold text-green-600">{summary.totalInsertions}</span>
                         </div>
                     </div>
                 </div>
+
                 <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl border border-purple-500/20">
-                    <p className="text-sm text-muted-foreground">Programs</p>
-                    <p className="text-2xl font-bold text-purple-600">{summary.programs}</p>
+                    <p className="text-sm text-muted-foreground">Top Mapped Programs</p>
+                    <div className="mt-1 space-y-1">
+                        {topPrograms.map(([program, count]) => (
+                            <div key={program} className="flex justify-between items-center">
+                                <span className="text-xs font-medium truncate max-w-[120px]">{program}</span>
+                                <span className="text-xs font-bold text-purple-600">{count}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+
                 <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-xl border border-orange-500/20">
                     <p className="text-sm text-muted-foreground">Date Range</p>
                     <p className="text-lg font-bold text-orange-600">
                         {summary.dateRange ? `${summary.dateRange.from} to ${summary.dateRange.to}` : 'N/A'}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        {summary.programs} unique program categories
                     </p>
                 </div>
             </div>
@@ -159,7 +167,7 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                 <div className="relative w-full sm:w-80">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search by date, medio, program..."
+                        placeholder="Search by date, medio, program, title..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="pl-10"
@@ -184,29 +192,39 @@ export function BudgetResultsTable({ data, summary }: BudgetResultsTableProps) {
                             <TableRow className="hover:bg-background">
                                 <SortableHeader field="date">Date</SortableHeader>
                                 <SortableHeader field="medio">Medio</SortableHeader>
-                                <SortableHeader field="program">Program</SortableHeader>
-                                <SortableHeader field="durationSeconds">Duration</SortableHeader>
-                                <SortableHeader field="orderedQuantity">Ordered Qty</SortableHeader>
+                                <SortableHeader field="mappedProgram">Mapped Program</SortableHeader>
+                                <SortableHeader field="originalTitle">Original Title</SortableHeader>
+                                <TableHead>Genre</TableHead>
+                                <TableHead>Franja</TableHead>
+                                <SortableHeader field="duration">Duration</SortableHeader>
+                                <SortableHeader field="insertions">Insertions</SortableHeader>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filteredAndSortedData.length > 0 ? (
                                 filteredAndSortedData.map((row, index) => (
-                                    <TableRow key={`${row.date}-${row.medio}-${row.program}-${index}`}>
+                                    <TableRow key={`${row.date}-${row.medio}-${row.originalTitle}-${index}`}>
                                         <TableCell className="font-mono">{row.date}</TableCell>
                                         <TableCell>
                                             <span className="px-2 py-1 bg-primary/10 text-primary rounded-md text-sm font-medium">
                                                 {row.medio}
                                             </span>
                                         </TableCell>
-                                        <TableCell>{row.program}</TableCell>
-                                        <TableCell>{row.durationSeconds || 0}s</TableCell>
-                                        <TableCell className="font-semibold">{row.orderedQuantity}</TableCell>
+                                        <TableCell>
+                                            <span className="px-2 py-1 bg-purple-500/10 text-purple-600 rounded-md text-sm font-medium">
+                                                {row.mappedProgram}
+                                            </span>
+                                        </TableCell>
+                                        <TableCell className="max-w-[200px] truncate">{row.originalTitle}</TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">{row.genre}</TableCell>
+                                        <TableCell className="text-muted-foreground text-sm">{row.franja}</TableCell>
+                                        <TableCell>{row.duration}s</TableCell>
+                                        <TableCell className="font-semibold">{row.insertions}</TableCell>
                                     </TableRow>
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                                         No results found
                                     </TableCell>
                                 </TableRow>

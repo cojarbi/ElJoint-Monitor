@@ -63,6 +63,10 @@ const data = {
           title: "Budget",
           url: "/agents/budget",
         },
+        {
+          title: "Insertion Log",
+          url: "/agents/insertion-log",
+        },
       ],
     },
     {

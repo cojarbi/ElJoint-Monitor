@@ -4,27 +4,33 @@ import { useState, useCallback } from 'react';
 import { Upload, FileSpreadsheet, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-interface BudgetUploaderProps {
-    onUploadComplete: (data: NormalizedRow[], summary: Summary) => void;
+interface InsertionLogUploaderProps {
+    onUploadComplete: (data: InsertionLogRow[], summary: InsertionLogSummary) => void;
     onUploadError: (error: string) => void;
 }
 
-export interface NormalizedRow {
+export interface InsertionLogRow {
     date: string;
     medio: string;
-    program: string;
-    orderedQuantity: number;
-    durationSeconds: number;
+    mappedProgram: string;
+    originalTitle: string;
+    genre: string;
+    franja: string;
+    duration: number;
+    insertions: number;
 }
 
-export interface Summary {
+export interface InsertionLogSummary {
     totalRows: number;
+    totalInsertions: number;
+    insertionsByMedio: Record<string, number>;
+    insertionsByProgram: Record<string, number>;
     medios: string[];
     programs: number;
     dateRange: { from: string; to: string } | null;
 }
 
-export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUploaderProps) {
+export function InsertionLogUploader({ onUploadComplete, onUploadError }: InsertionLogUploaderProps) {
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -48,7 +54,7 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
             const formData = new FormData();
             formData.append('file', file);
 
-            const response = await fetch('/api/normalize-budget', {
+            const response = await fetch('/api/parse-insertion-log', {
                 method: 'POST',
                 body: formData,
             });
@@ -129,7 +135,7 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
                             <div className="w-12 h-12 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
                             <div className="text-center">
                                 <p className="text-lg font-medium">Processing...</p>
-                                <p className="text-sm text-muted-foreground">Normalizing budget data</p>
+                                <p className="text-sm text-muted-foreground">Parsing insertion log and applying fuzzy mapping</p>
                             </div>
                         </>
                     ) : selectedFile ? (
@@ -162,7 +168,7 @@ export function BudgetUploader({ onUploadComplete, onUploadError }: BudgetUpload
                             </div>
                             <div className="text-center">
                                 <p className="text-lg font-medium">
-                                    Drop your budget file here
+                                    Drop your insertion log file here
                                 </p>
                                 <p className="text-sm text-muted-foreground mt-1">
                                     or click to browse (.xls, .xlsx)
