@@ -13,10 +13,18 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Play, Download, Search, CheckCircle2, AlertCircle, XCircle, ArrowUpDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { FileText, Play, Download, Search, CheckCircle2, AlertCircle, XCircle, ArrowUpDown } from 'lucide-react';
 import { useAiModel } from '@/hooks/use-ai-settings';
 import { useAliasMappings } from '@/hooks/use-alias-mappings';
+import { utils, writeFile } from 'xlsx';
+import { MonthFilter, DayFilter, MedioFilter } from '@/components/summary/DateFilter';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
 
 interface ReconciledRow extends NormalizedRow {
     franja: string;
@@ -38,6 +46,10 @@ interface OverflowRow {
     reason: 'Exceeded Order Qty' | 'No Matching Budget' | 'Parse Error (Budget)' | 'Parse Error (Insertion)';
 }
 
+interface NonStandardRow extends InsertionLogRow {
+    reason: 'Non-Standard Duration';
+}
+
 interface StoredBudgetData {
     data: NormalizedRow[];
     fileName?: string;
@@ -55,9 +67,11 @@ interface StoredSummaryState {
     overflowData: OverflowRow[];
     budgetFileName?: string;
     insertionFileName?: string;
+    nonStandardData?: NonStandardRow[];
 }
 
 type SortField = 'date' | 'medio' | 'program' | 'schedule' | 'originalTitle' | 'durationSeconds' | 'orderedQuantity' | 'totalInserted' | 'reconciliationConfidence';
+type OverflowSortField = 'date' | 'medio' | 'originalTitle' | 'franja' | 'timeRange' | 'duration' | 'insertions' | 'reason';
 type SortDirection = 'asc' | 'desc';
 
 export default function SummaryPage() {
@@ -67,10 +81,57 @@ export default function SummaryPage() {
     const [insertionData, setInsertionData] = useState<StoredInsertionData | null>(null);
     const [reconciledData, setReconciledData] = useState<ReconciledRow[] | null>(null);
     const [overflowData, setOverflowData] = useState<OverflowRow[]>([]);
+    const [nonStandardData, setNonStandardData] = useState<NonStandardRow[]>([]);
+    const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
+    const [selectedDays, setSelectedDays] = useState<number[]>([]);
+    const [selectedMedios, setSelectedMedios] = useState<string[]>([]);
+
+    // Load filters from localStorage on mount
+    useEffect(() => {
+        const savedMonths = localStorage.getItem('summary_date_filter');
+        if (savedMonths) {
+            setSelectedMonths(JSON.parse(savedMonths));
+        }
+        const savedDays = localStorage.getItem('summary_day_filter');
+        if (savedDays) {
+            try {
+                // Handle legacy single value or new array
+                const parsed = JSON.parse(savedDays);
+                if (Array.isArray(parsed)) setSelectedDays(parsed);
+                else setSelectedDays([Number(parsed)]);
+            } catch (e) {
+                // If it's a raw number string
+                setSelectedDays([Number(savedDays)]);
+            }
+        }
+        const savedMedios = localStorage.getItem('summary_medio_filter');
+        if (savedMedios) {
+            try {
+                const parsed = JSON.parse(savedMedios);
+                if (Array.isArray(parsed)) setSelectedMedios(parsed);
+            } catch (e) {
+                console.error("Failed to parse saved medios", e);
+            }
+        }
+    }, []);
     const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortField, setSortField] = useState<SortField>('date');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+    const [overflowSortField, setOverflowSortField] = useState<OverflowSortField>('date');
+    const [overflowSortDirection, setOverflowSortDirection] = useState<SortDirection>('asc');
+    const [accordionValue, setAccordionValue] = useState<string>("");
+
+    useEffect(() => {
+        const saved = localStorage.getItem('summary_accordion_state');
+        if (saved) setAccordionValue(saved);
+    }, []);
+
+    const handleAccordionChange = (val: string) => {
+        setAccordionValue(val);
+        if (val) localStorage.setItem('summary_accordion_state', val);
+        else localStorage.removeItem('summary_accordion_state');
+    };
 
     useEffect(() => {
         // Load source data from localStorage
@@ -102,9 +163,16 @@ export default function SummaryPage() {
                 if (budgetMatch && insertionMatch) {
                     setReconciledData(parsedSummary.reconciledData);
                     setOverflowData(parsedSummary.overflowData || []);
+                    setNonStandardData(parsedSummary.nonStandardData || []);
                 } else {
                     localStorage.removeItem('summary_reconciliation_data');
                 }
+            }
+
+            // Load persisted filter
+            const savedFilter = localStorage.getItem('summary_date_filter');
+            if (savedFilter) {
+                setSelectedMonths(JSON.parse(savedFilter));
             }
         } catch (e) {
             console.error('Failed to load data from localStorage', e);
@@ -148,8 +216,13 @@ export default function SummaryPage() {
 
 
     const reconcileData = async () => {
-        if (!budgetData?.data || !insertionData?.data) return;
+        console.log('🔍 reconcileData called! budgetData:', budgetData, 'insertionData:', insertionData);
+        if (!budgetData?.data || !insertionData?.data) {
+            console.log('⚠️ Missing data! Returning early.');
+            return;
+        }
 
+        console.log('✅ Data check passed. Starting reconciliation...');
         setIsLoading(true);
         setStatusMessage('Preparing data...');
         setReconciledData(null);
@@ -159,9 +232,83 @@ export default function SummaryPage() {
             const budgetRows = budgetData.data;
             const insertionRows = insertionData.data;
 
+            // 0. Filter Budget Rows by Selected Months
+            // If no months selected, include all? Or assume none? Usually "no filter" means "all".
+            // But here the user explicitly wants to "filter out".
+            // Let's assume if selectedMonths is empty, show all (default behavior), 
+            // BUT the user said "depending on what was selected".
+            // If they select nothing, maybe we should show nothing? Or everything? 
+            // Standard UI pattern: Empty selection = All, OR we force selection.
+            // Let's assume Empty = All for now, unless the user wants to start with empty.
+            // Actually, for "Reconciliation", usually you want to reconcile what you see.
+            // If selectedMonths has values, filter.
+
+            let filteredBudgetRows = budgetRows;
+            if (selectedMonths.length > 0) {
+                filteredBudgetRows = budgetRows.filter(row => {
+                    // row.date format "YYYY-MM-DD"
+                    // selectedMonths format "YYYY-MM"
+                    const rowMonth = row.date.substring(0, 7);
+
+                    if (!selectedMonths.includes(rowMonth)) return false;
+
+                    if (selectedDays.length > 0) {
+                        const dayPart = parseInt(row.date.split('-')[2], 10);
+                        return selectedDays.includes(dayPart);
+                    }
+
+                    return true;
+                });
+            } else if (selectedDays.length > 0) {
+                // Even if no months explicitly selected (meaning all), apply day filter if set
+                filteredBudgetRows = budgetRows.filter(row => {
+                    const dayPart = parseInt(row.date.split('-')[2], 10);
+                    return selectedDays.includes(dayPart);
+                });
+            }
+
+            if (selectedMedios.length > 0) {
+                filteredBudgetRows = filteredBudgetRows.filter(row => selectedMedios.includes(row.medio));
+            }
+
+            let filteredInsertionRows = insertionRows;
+            if (selectedMonths.length > 0) {
+                filteredInsertionRows = insertionRows.filter(row => {
+                    const rowMonth = row.date.substring(0, 7);
+                    if (!selectedMonths.includes(rowMonth)) return false;
+                    if (selectedDays.length > 0) {
+                        const dayPart = parseInt(row.date.split('-')[2], 10);
+                        return selectedDays.includes(dayPart);
+                    }
+                    return true;
+                });
+            } else if (selectedDays.length > 0) {
+                filteredInsertionRows = insertionRows.filter(row => {
+                    const dayPart = parseInt(row.date.split('-')[2], 10);
+                    return selectedDays.includes(dayPart);
+                });
+            }
+
+            // 1. Separate Standard vs Non-Standard Insertions (Using filtered rows)
+            const standardInsertions: InsertionLogRow[] = [];
+            let nonStandardInsertions: NonStandardRow[] = [];
+
+            filteredInsertionRows.forEach(row => {
+                const dur = Number(row.duration);
+                // Strict check for 10 or 35
+                if (dur === 10 || dur === 35) {
+                    standardInsertions.push(row);
+                } else {
+                    nonStandardInsertions.push({ ...row, reason: 'Non-Standard Duration' });
+                }
+            });
+
             // 1. Prepare lists for AI (Only Medios now)
-            const budgetMedios = Array.from(new Set(budgetRows.map(r => r.medio).filter(Boolean)));
-            const insertionMedios = Array.from(new Set(insertionRows.map(r => r.medio).filter(Boolean)));
+            // Use filtered budget rows for mapping context? Maybe safer to use all to ensure we capture all medio names
+            // But for reconciliation we only care about filtered.
+            // Let's use filteredBudgetRows for reconciliation.
+            const budgetMedios = Array.from(new Set(filteredBudgetRows.map(r => r.medio).filter(Boolean)));
+            const insertionMedios = Array.from(new Set(standardInsertions.map(r => r.medio).filter(Boolean)));
 
             // 2. Call AI API for Medio Mapping only
             let medioMap: Record<string, string | null> = {};
@@ -189,23 +336,23 @@ export default function SummaryPage() {
             setStatusMessage('Reconciling Matches...');
 
             // Track remaining capacity for each budget row
-            const budgetCapacity: number[] = budgetRows.map(r => r.orderedQuantity);
+            const budgetCapacity: number[] = filteredBudgetRows.map(r => r.orderedQuantity);
 
             // Track remaining quantity for each insertion row
-            const insertionRemaining: number[] = insertionRows.map(r => r.insertions);
+            const insertionRemaining: number[] = standardInsertions.map(r => r.insertions);
 
             // Track matching status for insertion rows
             // null = unchecked/no-match-attempted, string = specific error, 'matched' = matched at least one
-            const insertionStatus: string[] = new Array(insertionRows.length).fill(null);
+            const insertionStatus: string[] = new Array(standardInsertions.length).fill(null);
 
             // Optimization: Index insertion rows by Date
             const insertionByDate: Record<string, { row: InsertionLogRow, idx: number }[]> = {};
-            insertionRows.forEach((row, idx) => {
+            standardInsertions.forEach((row, idx) => {
                 if (!insertionByDate[row.date]) insertionByDate[row.date] = [];
                 insertionByDate[row.date].push({ row, idx });
             });
 
-            const reconciled = budgetRows.map((budgetRow, budgetIdx) => {
+            const reconciled = filteredBudgetRows.map((budgetRow, budgetIdx) => {
                 const candidateMatches = insertionByDate[budgetRow.date] || [];
 
                 let totalInserted = 0;
@@ -287,7 +434,7 @@ export default function SummaryPage() {
             // 4. Calculate Overflow / Unmatched
             const overflow: OverflowRow[] = [];
 
-            insertionRows.forEach((log, idx) => {
+            standardInsertions.forEach((log, idx) => {
                 const remaining = insertionRemaining[idx];
 
                 // If there are leftovers
@@ -319,24 +466,79 @@ export default function SummaryPage() {
                 }
             });
 
+            let finalOverflow = overflow;
+            let finalNonStandard = nonStandardInsertions;
+
+            // Apply Medio Filter to Overflow and Non-Standard
+            if (selectedMedios.length > 0) {
+                const isMedioMatch = (m: string) => {
+                    if (!m) return false;
+                    // Check exact match
+                    if (selectedMedios.includes(m)) return true;
+                    // Check mapped match
+                    const mapped = medioMap[m];
+                    if (mapped && selectedMedios.includes(mapped)) return true;
+                    return false;
+                };
+
+                finalOverflow = overflow.filter(row => isMedioMatch(row.medio));
+                finalNonStandard = nonStandardInsertions.filter(row => isMedioMatch(row.medio));
+            }
+
             setReconciledData(reconciled);
-            setOverflowData(overflow);
+            setOverflowData(finalOverflow);
+            setNonStandardData(finalNonStandard);
 
             // Persist results
             const stateToSave: StoredSummaryState = {
                 reconciledData: reconciled,
                 overflowData: overflow,
                 budgetFileName: budgetData.fileName,
-                insertionFileName: insertionData.fileName
+                insertionFileName: insertionData.fileName,
+                nonStandardData: nonStandardInsertions
             };
             localStorage.setItem('summary_reconciliation_data', JSON.stringify(stateToSave));
 
         } catch (e) {
             console.error('Reconciliation failed', e);
+            alert(`Reconciliation Error: ${e instanceof Error ? e.message : 'Unknown error'}`);
         } finally {
             setIsLoading(false);
         }
     };
+
+    // Handle Month Selection Change
+    const handleMonthChange = (months: string[]) => {
+        setSelectedMonths(months);
+        localStorage.setItem('summary_date_filter', JSON.stringify(months));
+    };
+
+    const handleDayChange = (days: number[]) => {
+        setSelectedDays(days);
+        if (days.length > 0) {
+            localStorage.setItem('summary_day_filter', JSON.stringify(days));
+        } else {
+            localStorage.removeItem('summary_day_filter');
+        }
+    };
+
+    const handleMedioChange = (medios: string[]) => {
+        setSelectedMedios(medios);
+        if (medios.length > 0) {
+            localStorage.setItem('summary_medio_filter', JSON.stringify(medios));
+        } else {
+            localStorage.removeItem('summary_medio_filter');
+        }
+    };
+
+    // Memoize available medios from budget data
+    const availableMedios = useMemo(() => {
+        if (!budgetData?.data) return [];
+        const uniqueMedios = Array.from(new Set(budgetData.data.map(row => row.medio).filter(Boolean)));
+        return uniqueMedios.sort();
+    }, [budgetData]);
+
+
 
     const handleSort = (field: SortField) => {
         if (sortField === field) {
@@ -344,6 +546,15 @@ export default function SummaryPage() {
         } else {
             setSortField(field);
             setSortDirection('asc');
+        }
+    };
+
+    const handleOverflowSort = (field: OverflowSortField) => {
+        if (overflowSortField === field) {
+            setOverflowSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setOverflowSortField(field);
+            setOverflowSortDirection('asc');
         }
     };
 
@@ -397,13 +608,46 @@ export default function SummaryPage() {
 
     }, [reconciledData, searchTerm, sortField, sortDirection]);
 
+    const sortedOverflowData = useMemo(() => {
+        return [...overflowData].sort((a, b) => {
+            let comparison = 0;
+            switch (overflowSortField) {
+                case 'date':
+                    comparison = a.date.localeCompare(b.date);
+                    break;
+                case 'medio':
+                    comparison = a.medio.localeCompare(b.medio);
+                    break;
+                case 'originalTitle':
+                    comparison = a.originalTitle.localeCompare(b.originalTitle);
+                    break;
+                case 'franja':
+                    comparison = (a.franja || '').localeCompare(b.franja || '');
+                    break;
+                case 'timeRange':
+                    comparison = (a.timeRange || '').localeCompare(b.timeRange || '');
+                    break;
+                case 'duration':
+                    comparison = a.duration - b.duration;
+                    break;
+                case 'insertions':
+                    comparison = a.insertions - b.insertions;
+                    break;
+                case 'reason':
+                    comparison = a.reason.localeCompare(b.reason);
+                    break;
+            }
+            return overflowSortDirection === 'asc' ? comparison : -comparison;
+        });
+    }, [overflowData, overflowSortField, overflowSortDirection]);
+
     const stats = useMemo(() => {
         if (!reconciledData) return null;
 
         const totalOrdered = reconciledData.reduce((sum, row) => sum + row.orderedQuantity, 0);
         const totalInserted = reconciledData.reduce((sum, row) => sum + row.totalInserted, 0);
 
-        const underDelivered = reconciledData.filter(row => row.status === 'under' || row.status === 'missing').length;
+        const underDelivered = reconciledData.filter(row => row.status === 'under').length;
         const overDelivered = reconciledData.filter(row => row.status === 'over').length;
         const missing = reconciledData.filter(row => row.status === 'missing').length;
 
@@ -413,55 +657,113 @@ export default function SummaryPage() {
             low: reconciledData.filter(row => row.reconciliationConfidence < 70).length
         };
 
+        const overflowCount = overflowData.reduce((sum, item) => sum + item.insertions, 0);
+        const nonStandardCount = nonStandardData.reduce((sum, item) => sum + item.insertions, 0);
+
+        const deliveryByMedio = reconciledData.reduce((acc, row) => {
+            const medio = row.medio || 'Unknown';
+            if (!acc[medio]) acc[medio] = { missing: 0, under: 0, over: 0 };
+            if (row.status === 'missing') acc[medio].missing++;
+            if (row.status === 'under') acc[medio].under++;
+            if (row.status === 'over') acc[medio].over++;
+            return acc;
+        }, {} as Record<string, { missing: number, under: number, over: number }>);
+
         return {
             totalOrdered,
             totalInserted,
             underDelivered,
             overDelivered,
             missing,
-            confidenceDistribution
+            overflowCount,
+            nonStandardCount,
+            confidenceDistribution,
+            deliveryByMedio
         };
-    }, [reconciledData]);
+    }, [reconciledData, overflowData, nonStandardData]);
 
-    const exportToCSV = () => {
+    const exportToExcel = () => {
         if (!reconciledData) return;
 
-        const headers = ['Date', 'Medio', 'Program', 'Schedule', 'Original Title', 'Duration', 'Ordered Qty', 'Insertion', 'Confidence'];
-        const csvContent = [
-            headers.join(','),
-            ...filteredAndSortedData.map(row =>
-                [
-                    row.date,
-                    `"${row.medio}"`,
-                    `"${row.program}"`,
-                    `"${row.schedule || ''}"`,
-                    `"${row.originalTitle}"`,
-                    row.durationSeconds || 0,
-                    row.orderedQuantity,
-                    row.totalInserted,
-                    row.reconciliationConfidence,
-                ].join(',')
-            )
-        ].join('\n');
+        // 1. Prepare Reconciled Worksheet
+        const reconciledHeaders = ['Date', 'Medio', 'Program', 'Schedule', 'Original Title', 'Duration', 'Ordered Qty', 'Insertion', 'Confidence', 'Status'];
+        const reconciledRows = filteredAndSortedData.map(row => ({
+            'Date': row.date,
+            'Medio': row.medio,
+            'Program': row.program,
+            'Schedule': row.schedule || '',
+            'Original Title': row.originalTitle,
+            'Duration': row.durationSeconds || 0,
+            'Ordered Qty': row.orderedQuantity,
+            'Insertion': row.totalInserted,
+            'Confidence': row.reconciliationConfidence,
+            'Status': row.status
+        }));
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', 'reconciliation_summary.csv');
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const wb = utils.book_new();
+        const wsReconciled = utils.json_to_sheet(reconciledRows, { header: reconciledHeaders });
+        utils.book_append_sheet(wb, wsReconciled, "Reconciliation");
+
+        // 2. Prepare Overflow Worksheet
+        if (overflowData.length > 0) {
+            const overflowHeaders = ['Date', 'Medio', 'Original Title', 'Franja', 'Time Range', 'Duration', 'Insertions', 'Reason'];
+            const overflowRows = sortedOverflowData.map(row => ({
+                'Date': row.date,
+                'Medio': row.medio,
+                'Original Title': row.originalTitle,
+                'Franja': row.franja || '',
+                'Time Range': row.timeRange || '',
+                'Duration': row.duration,
+                'Insertions': row.insertions,
+                'Reason': row.reason
+            }));
+            const wsOverflow = utils.json_to_sheet(overflowRows, { header: overflowHeaders });
+            utils.book_append_sheet(wb, wsOverflow, "Overflow-Unmatched");
+        }
+
+        // 3. Prepare Non-Standard Worksheet
+        if (nonStandardData.length > 0) {
+            const nsHeaders = ['Date', 'Medio', 'Original Title', 'Franja', 'Time Range', 'Duration', 'Insertions', 'Reason'];
+            const nsRows = nonStandardData.map(row => ({
+                'Date': row.date,
+                'Medio': row.medio,
+                'Original Title': row.originalTitle,
+                'Franja': row.franja || '',
+                'Time Range': row.timeRange || '',
+                'Duration': row.duration,
+                'Insertions': row.insertions,
+                'Reason': row.reason
+            }));
+            const wsNs = utils.json_to_sheet(nsRows, { header: nsHeaders });
+            utils.book_append_sheet(wb, wsNs, "Non-Standard-Durations");
+        }
+
+        // 3. Save File
+        writeFile(wb, "reconciliation_summary.xlsx");
     };
 
-    const SortableHeader = ({ field, children, center }: { field: SortField; children: React.ReactNode; center?: boolean }) => (
+    const SortableHeader = <T extends string>({
+        field,
+        children,
+        currentSortField,
+        currentSortDirection,
+        onSort,
+        center
+    }: {
+        field: T;
+        children: React.ReactNode;
+        currentSortField: T;
+        currentSortDirection: SortDirection;
+        onSort: (field: T) => void;
+        center?: boolean
+    }) => (
         <TableHead
             className="cursor-pointer hover:bg-muted/50 transition-colors bg-card"
-            onClick={() => handleSort(field)}
+            onClick={() => onSort(field)}
         >
             <div className={`flex items-center gap-2 ${center ? 'justify-center' : ''}`}>
                 {children}
-                <ArrowUpDown className={`w-4 h-4 ${sortField === field ? 'text-primary' : 'text-muted-foreground'}`} />
+                <ArrowUpDown className={`w-4 h-4 ${currentSortField === field ? 'text-primary' : 'text-muted-foreground'}`} />
             </div>
         </TableHead>
     );
@@ -477,121 +779,236 @@ export default function SummaryPage() {
     }
 
     return (
-        <div className="flex flex-1 flex-col gap-6 p-6">
-            {/* Header Area */}
-            <div className="grid gap-6 md:grid-cols-3">
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Budget Source
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-emerald-500" />
-                            <span className="font-medium truncate">
-                                {budgetData?.fileNames || budgetData?.fileName || 'No file uploaded'}
-                            </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {budgetData?.data?.length || 0} rows loaded
-                        </p>
-                    </CardContent>
-                </Card>
+        <div className="flex flex-1 flex-col gap-6 p-6 pt-0">
+            {/* Header Area - Sticky (Offsets by global header h-16) */}
+            <div className="sticky top-16 z-40 bg-background/80 backdrop-blur-md pb-1 pt-1 -mt-4 -mx-6 px-6 border-b shadow-sm">
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-3 items-stretch xl:min-h-[90px]">
+                    {/* Column 1: Summary Metrics (1x4) - Span 5 */}
+                    <div className="w-full xl:col-span-5 h-full">
+                        {stats ? (
+                            <div className="grid grid-cols-4 gap-2 h-full">
+                                <Card className="h-full flex flex-col justify-center text-center shadow-sm">
+                                    <CardHeader className="py-1 px-1 bg-muted/10">
+                                        <CardTitle className="text-[20px] font-bold text-muted-foreground uppercase tracking-widest">Orders</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-1 flex flex-col items-center pt-2 px-2 pb-1">
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-4xl font-bold">{stats.totalOrdered}</span>
+                                                <span className="text-sm font-semibold text-muted-foreground/50">/</span>
+                                                <span className="text-4xl font-bold">{stats.totalInserted}</span>
+                                            </div>
+                                            <div className="flex gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                                                <span>Ordered</span>
+                                                <span>Inserted</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="h-full flex flex-col justify-center text-center shadow-sm">
+                                    <CardHeader className="py-1 px-1 bg-muted/10">
+                                        <CardTitle className="text-[20px] font-bold text-muted-foreground uppercase tracking-widest">Delivery</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-1 flex flex-col items-center pt-2 px-2 pb-1">
+                                        <div className="flex flex-col items-center gap-0.5">
+                                            {/* Main Total */}
+                                            <div className="flex items-baseline gap-1 justify-center">
+                                                <span className="text-4xl font-bold">{stats.missing}</span>
+                                                <span className="text-sm font-semibold text-muted-foreground/50">/</span>
+                                                <span className="text-4xl font-bold">{stats.underDelivered}</span>
+                                                <span className="text-sm font-semibold text-muted-foreground/50">/</span>
+                                                <span className="text-4xl font-bold">{stats.overDelivered}</span>
+                                            </div>
+                                            <div className="flex gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                                                <span>Miss</span>
+                                                <span>Under</span>
+                                                <span>Over</span>
+                                            </div>
 
-                <Card>
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            Insertion Log Source
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-purple-500" />
-                            <span className="font-medium truncate">
-                                {insertionData?.fileName || 'No file uploaded'}
-                            </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                            {insertionData?.data?.length || 0} rows loaded
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card className="flex flex-col justify-center items-center bg-muted/50 border-dashed">
-                    <Button
-                        size="lg"
-                        onClick={reconcileData}
-                        disabled={isLoading || !budgetData || !insertionData}
-                        className="w-full h-full bg-white hover:bg-white text-primary border-2 border-primary hover:border-primary/80 transition-colors"
-                    >
-                        {isLoading ? (
-                            <span className="animate-pulse flex items-center gap-2">
-                                <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
-                                {statusMessage}
-                            </span>
+                                            {/* Breakdown by Medio - Below and Side-by-Side */}
+                                            <div className="flex flex-row justify-center gap-3 mt-1.5 pt-1.5 border-t border-border/40 w-full">
+                                                {Object.entries(stats.deliveryByMedio).map(([medio, counts]) => (
+                                                    <div key={medio} className="flex flex-col items-center px-1">
+                                                        <span className="text-[8px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">{medio}</span>
+                                                        <div className="flex items-baseline gap-0.5">
+                                                            <span className="text-[15px] font-bold">{counts.missing}</span>
+                                                            <span className="text-[15px] font-semibold text-muted-foreground/30">/</span>
+                                                            <span className="text-[15px] font-bold">{counts.under}</span>
+                                                            <span className="text-[15px] font-semibold text-muted-foreground/30">/</span>
+                                                            <span className="text-[15px] font-bold">{counts.over}</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="h-full flex flex-col justify-center text-center shadow-sm">
+                                    <CardHeader className="py-1 px-1 bg-muted/10">
+                                        <CardTitle className="text-[20px] font-bold text-muted-foreground uppercase tracking-widest">Confidence</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-1 flex flex-col items-center pt-2 px-2 pb-1">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-4xl font-bold">{stats.confidenceDistribution.high}</span>
+                                                <span className="text-base font-semibold text-muted-foreground/50">/</span>
+                                                <span className="text-4xl font-bold">{stats.confidenceDistribution.medium}</span>
+                                                <span className="text-base font-semibold text-muted-foreground/50">/</span>
+                                                <span className="text-4xl font-bold">{stats.confidenceDistribution.low}</span>
+                                            </div>
+                                            <div className="flex gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                                <span>High</span>
+                                                <span>Med</span>
+                                                <span>Low</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                                <Card className="h-full flex flex-col justify-center text-center shadow-sm">
+                                    <CardHeader className="py-1 px-1 bg-muted/10">
+                                        <CardTitle className="text-[20px] font-bold text-muted-foreground uppercase tracking-widest">Unreconciled</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="flex-1 flex flex-col items-center pt-2 px-2 pb-1">
+                                        <div className="flex flex-col items-center gap-1">
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-4xl font-bold">{stats.overflowCount}</span>
+                                                <span className="text-base font-semibold text-muted-foreground/50">/</span>
+                                                <span className="text-4xl font-bold">{stats.nonStandardCount}</span>
+                                            </div>
+                                            <div className="flex gap-2 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">
+                                                <span>Overflow</span>
+                                                <span>Inv. Dur</span>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
                         ) : (
-                            <span className="flex items-center gap-2">
-                                <Play className="w-5 h-5 fill-current" />
-                                Reconcile
-                            </span>
+                            <div className="h-full flex items-center justify-center border-2 border-dashed rounded-xl bg-muted/20 text-muted-foreground">
+                                <p className="text-xs">Metrics pending</p>
+                            </div>
                         )}
-                    </Button>
-                </Card>
-            </div>
+                    </div>
 
-            {/* Summary Metrics Cards */}
-            {stats && (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
-                    <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl border border-blue-500/20">
-                        <p className="text-sm text-muted-foreground">Total Ordered vs Inserted</p>
-                        <div className="flex items-end gap-2 mt-1">
-                            <span className="text-2xl font-bold text-blue-600">{stats.totalOrdered}</span>
-                            <span className="text-sm text-muted-foreground mb-1">ordered</span>
-                            <span className="text-lg font-semibold text-blue-500 mx-1">/</span>
-                            <span className="text-2xl font-bold text-blue-600">{stats.totalInserted}</span>
-                            <span className="text-sm text-muted-foreground mb-1">inserted</span>
+                    {/* Column 2: Filter - Span 2 */}
+                    <div className="hidden xl:flex w-full xl:col-span-2 h-full flex-col gap-2">
+                        <Card className="h-full flex flex-col text-center shadow-sm">
+                            <CardHeader className="py-1 px-1 bg-muted/10">
+                                <CardTitle className="text-[10px] font-bold text-muted-foreground text-center uppercase tracking-widest">
+                                    Filter
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="px-2 pb-2 pt-1 flex-1">
+                                <div className="flex flex-col gap-1.5">
+                                    {/* Row 1: Month and Day */}
+                                    <div className="grid grid-cols-2 gap-1.5">
+                                        <MonthFilter
+                                            selectedMonths={selectedMonths}
+                                            onChange={handleMonthChange}
+                                        />
+                                        <DayFilter
+                                            selectedDays={selectedDays}
+                                            onDayChange={handleDayChange}
+                                        />
+                                    </div>
+
+                                    {/* Row 2: Medio Filter (Half Width) */}
+                                    <div className="grid grid-cols-2 gap-1.5">
+                                        <MedioFilter
+                                            medios={availableMedios}
+                                            selectedMedios={selectedMedios}
+                                            onMedioChange={handleMedioChange}
+                                        />
+                                        <div />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    {/* Column 3: Sources & Actions (Side-by-Side) - Span 3 */}
+                    <div className="w-full xl:col-span-3 flex flex-col gap-2 h-full">
+                        {/* Source Cards Grid */}
+                        <div className="grid grid-cols-2 gap-2 flex-1 min-h-0">
+                            <Card className="flex flex-col min-w-0 shadow-sm overflow-hidden text-[10px]">
+                                <CardHeader className="py-2 px-1 text-center bg-muted/10">
+                                    <CardTitle className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-1">
+                                        <FileText className="w-2.5 h-2.5" />
+                                        Budget
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-2 flex flex-col h-full justify-between overflow-hidden">
+                                    <div className="space-y-1 overflow-auto max-h-[60px] pr-1 custom-scrollbar">
+                                        {(() => {
+                                            const names = budgetData?.fileNames || budgetData?.fileName;
+                                            if (!names) return <span className="text-muted-foreground italic">-</span>;
+                                            const nameList = Array.isArray(names) ? names : String(names).split(',').map(s => s.trim());
+                                            return nameList.map((name, i) => (
+                                                <div key={i} className="font-medium text-[10px] leading-tight break-all border-l-2 border-primary/40 pl-1.5 py-0.5" title={name}>
+                                                    {name}
+                                                </div>
+                                            ));
+                                        })()}
+                                    </div>
+                                    <div className="text-[8px] text-muted-foreground mt-1 text-right font-bold uppercase tracking-tighter opacity-70">
+                                        {budgetData?.data?.length || 0} rows
+                                    </div>
+                                </CardContent>
+                            </Card>
+
+                            <Card className="flex flex-col min-w-0 shadow-sm overflow-hidden text-[10px]">
+                                <CardHeader className="py-2 px-1 text-center bg-muted/10">
+                                    <CardTitle className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center justify-center gap-1">
+                                        <FileText className="w-2.5 h-2.5" />
+                                        Insertion
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent className="p-2 flex flex-col h-full justify-between overflow-hidden">
+                                    <div className="space-y-1 overflow-auto max-h-[60px] pr-1 custom-scrollbar">
+                                        {(() => {
+                                            const name = insertionData?.fileName;
+                                            if (!name) return <span className="text-muted-foreground italic">-</span>;
+                                            return (
+                                                <div className="font-medium text-[10px] leading-tight break-all border-l-2 border-primary/40 pl-1.5 py-0.5" title={name}>
+                                                    {name}
+                                                </div>
+                                            );
+                                        })()}
+                                    </div>
+                                    <div className="text-[8px] text-muted-foreground mt-1 text-right font-bold uppercase tracking-tighter opacity-70">
+                                        {insertionData?.data?.length || 0} rows
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+
+                        {/* Reconcile Button */}
+                        <div className="h-8 shrink-0">
+                            <Button
+                                size="sm"
+                                onClick={reconcileData}
+                                disabled={isLoading || !budgetData || !insertionData}
+                                className="w-full h-full shadow-sm text-[10px]"
+                            >
+                                {isLoading ? (
+                                    <span className="animate-pulse flex items-center gap-2">
+                                        <span className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce" />
+                                        Processing...
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1.5">
+                                        <Play className="w-3 h-3 fill-current" />
+                                        Reconcile
+                                    </span>
+                                )}
+                            </Button>
                         </div>
                     </div>
-                    <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-xl border border-orange-500/20">
-                        <p className="text-sm text-muted-foreground">Delivery Status</p>
-                        <div className="mt-2 space-y-1 text-sm">
-                            <div className="flex justify-between">
-                                <span>Under Delivered:</span>
-                                <span className="font-bold text-orange-600">{stats.underDelivered}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Over Delivered:</span>
-                                <span className="font-bold text-blue-600">{stats.overDelivered}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-teal-500/10 to-teal-600/5 rounded-xl border border-teal-500/20">
-                        <p className="text-sm text-muted-foreground">Confidence Range</p>
-                        <div className="mt-2 space-y-1 text-sm">
-                            <div className="flex justify-between">
-                                <span>High ({'>'}90%):</span>
-                                <span className="font-bold text-green-600">{stats.confidenceDistribution.high}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Medium (70-90%):</span>
-                                <span className="font-bold text-yellow-600">{stats.confidenceDistribution.medium}</span>
-                            </div>
-                            <div className="flex justify-between">
-                                <span>Low ({'<'}70%):</span>
-                                <span className="font-bold text-red-600">{stats.confidenceDistribution.low}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-red-500/10 to-red-600/5 rounded-xl border border-red-500/20">
-                        <p className="text-sm text-muted-foreground">Overflow / Unmatched</p>
-                        <div className="flex items-end gap-2 mt-1">
-                            <span className="text-2xl font-bold text-red-600">{overflowData.length}</span>
-                            <span className="text-sm text-muted-foreground mb-1">items</span>
-                        </div>
-                    </div>
+
+                    {/* Column 4: Remainder Spacing - Span 2 */}
+                    <div className="hidden xl:block xl:col-span-2"></div>
                 </div>
-            )}
+            </div>
 
             {/* Results Area */}
             {reconciledData && (
@@ -602,13 +1019,13 @@ export default function SummaryPage() {
                             <Input
                                 placeholder="Search results..."
                                 value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                                 className="pl-9"
                             />
                         </div>
-                        <Button variant="outline" onClick={exportToCSV} className="gap-2">
+                        <Button variant="outline" onClick={exportToExcel} className="gap-2">
                             <Download className="w-4 h-4" />
-                            Export CSV
+                            Export Excel
                         </Button>
                     </div>
 
@@ -620,19 +1037,19 @@ export default function SummaryPage() {
                                 Budget Reconciliation
                             </h3>
                         </div>
-                        <div className="max-h-[400px] overflow-auto">
+                        <div className="max-h-[800px] overflow-auto">
                             <table className="w-full caption-bottom text-sm">
                                 <TableHeader className="sticky top-0 z-20 bg-card shadow-sm">
                                     <TableRow>
-                                        <SortableHeader field="date">Date</SortableHeader>
-                                        <SortableHeader field="medio">Medio</SortableHeader>
-                                        <SortableHeader field="program">Program</SortableHeader>
-                                        <SortableHeader field="schedule">Schedule</SortableHeader>
-                                        <SortableHeader field="originalTitle">Original Title</SortableHeader>
-                                        <SortableHeader field="durationSeconds" center>Duration</SortableHeader>
-                                        <SortableHeader field="orderedQuantity" center>Ordered Qty</SortableHeader>
-                                        <SortableHeader field="totalInserted" center>Insertion</SortableHeader>
-                                        <SortableHeader field="reconciliationConfidence" center>Confidence</SortableHeader>
+                                        <SortableHeader field="date" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection}>Date</SortableHeader>
+                                        <SortableHeader field="medio" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection}>Medio</SortableHeader>
+                                        <SortableHeader field="program" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection}>Program</SortableHeader>
+                                        <SortableHeader field="schedule" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection}>Schedule</SortableHeader>
+                                        <SortableHeader field="originalTitle" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection}>Original Title</SortableHeader>
+                                        <SortableHeader field="durationSeconds" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection} center>Duration</SortableHeader>
+                                        <SortableHeader field="orderedQuantity" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection} center>Ordered Qty</SortableHeader>
+                                        <SortableHeader field="totalInserted" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection} center>Insertion</SortableHeader>
+                                        <SortableHeader field="reconciliationConfidence" currentSortField={sortField} onSort={handleSort} currentSortDirection={sortDirection} center>Confidence</SortableHeader>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -685,68 +1102,141 @@ export default function SummaryPage() {
                         </div>
                     </div>
 
-                    {/* Overflow / Unmatched Table */}
-                    {overflowData.length > 0 && (
-                        <div className="rounded-xl border bg-card border-red-200">
-                            <div className="p-3 border-b bg-red-50">
-                                <h3 className="font-semibold text-sm flex items-center gap-2 text-red-700">
-                                    <AlertCircle className="w-4 h-4" />
-                                    Overflow / Unmatched Items ({overflowData.length})
-                                </h3>
-                            </div>
-                            <div className="max-h-[300px] overflow-auto">
-                                <table className="w-full caption-bottom text-sm">
-                                    <TableHeader className="sticky top-0 z-20 bg-card shadow-sm">
-                                        <TableRow>
-                                            <TableHead>Date</TableHead>
-                                            <TableHead>Medio</TableHead>
-                                            <TableHead>Original Title</TableHead>
-                                            <TableHead>Franja</TableHead>
-                                            <TableHead>Time Range</TableHead>
-                                            <TableHead className="text-center">Duration</TableHead>
-                                            <TableHead className="text-center">Insertions</TableHead>
-                                            <TableHead>Reason</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {overflowData.map((row, idx) => (
-                                            <TableRow key={idx} className="hover:bg-muted/50">
-                                                <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
-                                                    {row.date}
-                                                </TableCell>
-                                                <TableCell className="font-medium text-xs">
-                                                    {row.medio}
-                                                </TableCell>
-                                                <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={row.originalTitle}>
-                                                    {row.originalTitle}
-                                                </TableCell>
-                                                <TableCell className="text-xs">
-                                                    {row.franja || '-'}
-                                                </TableCell>
-                                                <TableCell className="text-xs text-muted-foreground">
-                                                    {row.timeRange || '-'}
-                                                </TableCell>
-                                                <TableCell className="text-center text-xs">
-                                                    {row.duration}s
-                                                </TableCell>
-                                                <TableCell className="text-center font-bold text-red-600">
-                                                    {row.insertions}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge variant={
-                                                        row.reason === 'Exceeded Order Qty' ? 'default' :
-                                                            row.reason === 'No Matching Budget' ? 'destructive' :
-                                                                'outline'
-                                                    } className="text-[10px]">
-                                                        {row.reason}
-                                                    </Badge>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </table>
-                            </div>
-                        </div>
+                    {/* Accordion for Overflow and Non-Standard Data */}
+                    {(overflowData.length > 0 || nonStandardData.length > 0) && (
+                        <Accordion type="single" collapsible value={accordionValue} onValueChange={handleAccordionChange} className="w-full">
+                            <AccordionItem value="details" className="border-none">
+                                <AccordionTrigger className="hover:no-underline py-2 px-4 bg-muted/40 rounded-lg border">
+                                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground w-full">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span>
+                                            Overflow / Unmatched Items ({overflowData.length}) / Non-Standard Durations (Excluded from Match) ({nonStandardData.length})
+                                        </span>
+                                    </div>
+                                </AccordionTrigger>
+                                <AccordionContent className="p-1 space-y-4">
+                                    {/* Overflow / Unmatched Table */}
+                                    {overflowData.length > 0 && (
+                                        <div className="rounded-xl border bg-card border-red-200">
+                                            <div className="p-3 border-b bg-red-50">
+                                                <h3 className="font-semibold text-sm flex items-center gap-2 text-red-700">
+                                                    Overflow / Unmatched Items ({overflowData.length})
+                                                </h3>
+                                            </div>
+                                            <div className="max-h-[300px] overflow-auto">
+                                                <table className="w-full caption-bottom text-sm">
+                                                    <TableHeader className="sticky top-0 z-20 bg-card shadow-sm">
+                                                        <TableRow>
+                                                            <SortableHeader field="date" currentSortField={overflowSortField} onSort={handleOverflowSort} currentSortDirection={overflowSortDirection}>Date</SortableHeader>
+                                                            <SortableHeader field="medio" currentSortField={overflowSortField} onSort={handleOverflowSort} currentSortDirection={overflowSortDirection}>Medio</SortableHeader>
+                                                            <SortableHeader field="originalTitle" currentSortField={overflowSortField} onSort={handleOverflowSort} currentSortDirection={overflowSortDirection}>Original Title</SortableHeader>
+                                                            <SortableHeader field="franja" currentSortField={overflowSortField} onSort={handleOverflowSort} currentSortDirection={overflowSortDirection}>Franja</SortableHeader>
+                                                            <SortableHeader field="timeRange" currentSortField={overflowSortField} onSort={handleOverflowSort} currentSortDirection={overflowSortDirection}>Time Range</SortableHeader>
+                                                            <SortableHeader field="duration" currentSortField={overflowSortField} onSort={handleOverflowSort} currentSortDirection={overflowSortDirection} center>Duration</SortableHeader>
+                                                            <SortableHeader field="insertions" currentSortField={overflowSortField} onSort={handleOverflowSort} currentSortDirection={overflowSortDirection} center>Insertions</SortableHeader>
+                                                            <SortableHeader field="reason" currentSortField={overflowSortField} onSort={handleOverflowSort} currentSortDirection={overflowSortDirection}>Reason</SortableHeader>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {sortedOverflowData.map((row, idx) => (
+                                                            <TableRow key={idx} className="hover:bg-muted/50">
+                                                                <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+                                                                    {row.date}
+                                                                </TableCell>
+                                                                <TableCell className="font-medium text-xs">
+                                                                    {row.medio}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={row.originalTitle}>
+                                                                    {row.originalTitle}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">
+                                                                    {row.franja || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs text-muted-foreground">
+                                                                    {row.timeRange || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="text-center text-xs">
+                                                                    {row.duration}s
+                                                                </TableCell>
+                                                                <TableCell className="text-center font-bold text-red-600">
+                                                                    {row.insertions}
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant={
+                                                                        row.reason === 'Exceeded Order Qty' ? 'default' :
+                                                                            row.reason === 'No Matching Budget' ? 'destructive' :
+                                                                                'outline'
+                                                                    } className="text-[10px]">
+                                                                        {row.reason}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Non-Standard Durations Table */}
+                                    {nonStandardData.length > 0 && (
+                                        <div className="rounded-xl border bg-card border-orange-200">
+                                            <div className="p-3 border-b bg-orange-50">
+                                                <h3 className="font-semibold text-sm flex items-center gap-2 text-orange-700">
+                                                    Non-Standard Durations (Excluded from Match) ({nonStandardData.length})
+                                                </h3>
+                                            </div>
+                                            <div className="max-h-[300px] overflow-auto">
+                                                <table className="w-full caption-bottom text-sm">
+                                                    <TableHeader className="sticky top-0 z-20 bg-orange-50 shadow-sm">
+                                                        <TableRow className="hover:bg-transparent">
+                                                            <TableHead className="text-orange-900">Date</TableHead>
+                                                            <TableHead className="text-orange-900">Medio</TableHead>
+                                                            <TableHead className="text-orange-900">Original Title</TableHead>
+                                                            <TableHead className="text-orange-900">Franja</TableHead>
+                                                            <TableHead className="text-center text-orange-900">Time</TableHead>
+                                                            <TableHead className="text-center text-orange-900">Duration</TableHead>
+                                                            <TableHead className="text-center text-orange-900">Insertions</TableHead>
+                                                            <TableHead className="text-orange-900">Reason</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {nonStandardData.map((row, idx) => (
+                                                            <TableRow key={idx} className="hover:bg-orange-100/50">
+                                                                <TableCell className="font-mono text-xs text-muted-foreground">
+                                                                    {row.date}
+                                                                </TableCell>
+                                                                <TableCell className="font-medium text-xs">
+                                                                    {row.medio}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={row.originalTitle}>
+                                                                    {row.originalTitle}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">
+                                                                    {row.franja || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="text-center text-xs font-mono">
+                                                                    {row.timeRange || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="text-center text-xs">
+                                                                    {row.duration}s
+                                                                </TableCell>
+                                                                <TableCell className="text-center font-medium">
+                                                                    {row.insertions}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs text-orange-600 font-medium">
+                                                                    {row.reason}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     )}
                 </div>
             )}

@@ -1,0 +1,843 @@
+Date,Medio,Program,Schedule,Original Title,Duration,Ordered Qty,Insertion,Confidence,Status
+2025-12-12,MEDCOM,Noticiero Matutino,6:00am-08:00am,-,35,1,0,0,missing
+2025-12-12,MEDCOM,Novela Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-12,MEDCOM,Tu Mañana,8:00am-11:30am,-,35,1,0,0,missing
+2025-12-12,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-12,TVN,Jelou,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-12,TVN,Noticiero Matutino,6:00am-08:00am,-,10,1,0,0,missing
+2025-12-15,MEDCOM,Novela Vespertina,1:00pm-05:00pm,-,35,1,0,0,missing
+2025-12-15,MEDCOM,Tu Mañana,8:00am-11:30am,-,35,1,0,0,missing
+2025-12-15,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-17,TVN,Rot. Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-29,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-30,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-10,MEDCOM,Novela Estelar,8:00pm-10:30pm,-,10,3,0,0,missing
+2025-12-10,TVN,Novela Estelar,8:00pm-11:00pm,-,10,3,0,0,missing
+2025-12-11,MEDCOM,Noticiero Matutino,6:00am-08:00am,-,10,1,0,0,missing
+2025-12-11,MEDCOM,Novela Estelar,8:00pm-10:30pm,-,10,3,0,0,missing
+2025-12-11,MEDCOM,Novela Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-11,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-11,TVN,Noticiero Matutino,6:00am-08:00am,-,10,1,0,0,missing
+2025-12-11,TVN,Novela Estelar,8:00pm-11:00pm,-,10,3,0,0,missing
+2025-12-11,TVN,Rot. Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-12,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,-,35,1,0,0,missing
+2025-12-12,MEDCOM,Noticiero Matutino,6:00am-08:00am,-,35,1,0,0,missing
+2025-12-12,MEDCOM,Noticiero Matutino,6:00am-08:00am,-,10,1,0,0,missing
+2025-12-12,MEDCOM,Novela Vespertina,1:00pm-05:00pm,-,35,1,0,0,missing
+2025-12-12,MEDCOM,Novela Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-12,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-12,TVN,Fam. de la Tarde,1:00pm-05:00pm,-,35,1,0,0,missing
+2025-12-12,TVN,Jelou,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-12,TVN,Noticiero Estelar,6:00pm-08:00pm,-,35,2,0,0,missing
+2025-12-12,TVN,Noticiero Estelar,6:00pm-08:00pm,-,10,2,0,0,missing
+2025-12-12,TVN,Noticiero Matutino,6:00am-08:00am,-,35,1,0,0,missing
+2025-12-12,TVN,Noticiero Matutino,6:00am-08:00am,-,10,1,0,0,missing
+2025-12-12,TVN,Rot. Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-15,TVN,Fam. de la Tarde,1:00pm-05:00pm,-,35,1,0,0,missing
+2025-12-15,TVN,Jelou,8:00am-11:30am,-,35,1,0,0,missing
+2025-12-16,TVN,Rot. Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-17,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-17,TVN,Rot. Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-18,MEDCOM,Novela Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-18,TVN,Rot. Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-19,MEDCOM,Novela Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-19,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-19,TVN,Rot. Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-20,MEDCOM,A lo Panameño,7:00pm- 8:00pm,-,35,1,0,0,missing
+2025-12-20,MEDCOM,A lo Panameño,7:00pm- 8:00pm,-,10,1,0,0,missing
+2025-12-20,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,-,35,1,0,0,missing
+2025-12-20,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,-,10,1,0,0,missing
+2025-12-22,MEDCOM,Novela Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-22,TVN,Fam. de la Tarde,1:00pm-05:00pm,-,35,1,0,0,missing
+2025-12-22,TVN,Rot. Vespertina,1:00pm-05:00pm,-,10,1,0,0,missing
+2025-12-10,MEDCOM,Novela Estelar,8:00pm-11:00pm,-,10,1,0,0,missing
+2025-12-10,TVN,Novela Estelar,8:00pm-11:00pm,-,10,1,0,0,missing
+2025-12-11,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,-,10,1,0,0,missing
+2025-12-11,MEDCOM,Tu Mañana,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-11,TVN,Jelou,8:00am-11:30am,-,10,1,0,0,missing
+2025-12-11,TVN,Noticiero Estelar,6:00pm-08:00pm,-,10,1,0,0,missing
+2025-12-15,MEDCOM,Novela Estelar,8:00pm-11:00pm,-,35,1,0,0,missing
+2025-12-15,TVN,Novela Estelar,8:00pm-11:00pm,-,35,1,0,0,missing
+2025-12-19,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,-,10,1,0,0,missing
+2025-12-19,MEDCOM,Novela Estelar,8:00pm-11:00pm,-,35,1,0,0,missing
+2025-12-19,MEDCOM,Novela Estelar,8:00pm-11:00pm,-,10,1,0,0,missing
+2025-12-22,MEDCOM,Tu Mañana,8:00am-11:30am,-,35,1,0,0,missing
+2025-12-22,TVN,Jelou,8:00am-11:30am,-,35,1,0,0,missing
+2025-12-22,TVN,Noticiero Matutino,6:00am-08:00am,-,10,1,0,0,missing
+2025-12-22,TVN,Novela Estelar,8:00pm-11:00pm,-,10,1,0,0,missing
+2025-12-12,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-12,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-12,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-12,TVN,Fam. de la Tarde,1:00pm-05:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-12,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-12,TVN,Rot. Vespertina,1:00pm-05:00pm,SUENOS ROBADOS,10,1,1,100,matched
+2025-12-15,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,35,1,1,100,matched
+2025-12-15,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-15,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-15,TVN,Fam. de la Tarde,1:00pm-05:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-15,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-15,TVN,Noticiero Matutino,6:00am-08:00am,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-15,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-15,TVN,Rot. Vespertina,1:00pm-05:00pm,AMOR AMARGO,10,1,1,100,matched
+2025-12-16,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,35,1,1,100,matched
+2025-12-16,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-16,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,35,1,1,100,matched
+2025-12-16,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,10,1,1,100,matched
+2025-12-16,TVN,Fam. de la Tarde,1:00pm-05:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-16,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-16,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-16,TVN,Rot. Vespertina,1:00pm-05:00pm,AMOR AMARGO,10,1,1,100,matched
+2025-12-17,MEDCOM,Noticiero Matutino,6:00am-08:00am,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-17,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA MATUTIN,10,1,1,100,matched
+2025-12-17,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-17,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,10,1,1,100,matched
+2025-12-17,TVN,Fam. de la Tarde,1:00pm-05:00pm,AMOR AMARGO,35,1,1,100,matched
+2025-12-17,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-17,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-17,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,10,1,1,100,matched
+2025-12-18,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,35,1,1,100,matched
+2025-12-18,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-18,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-18,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,10,1,1,100,matched
+2025-12-18,MEDCOM,Tu Mañana,8:00am-11:30am,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-18,TVN,Fam. de la Tarde,1:00pm-05:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-18,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-18,TVN,Noticiero Matutino,6:00am-08:00am,JELOU,35,1,1,100,matched
+2025-12-18,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-18,TVN,Rot. Vespertina,1:00pm-05:00pm,AMOR AMARGO,10,1,1,100,matched
+2025-12-19,MEDCOM,Noticiero Matutino,6:00am-08:00am,PARRANDA NAVIDAD A LO PANAMENO,35,1,1,100,matched
+2025-12-19,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA MATUTIN,10,1,1,100,matched
+2025-12-19,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-19,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,10,1,1,100,matched
+2025-12-19,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,10,1,1,100,matched
+2025-12-19,TVN,Fam. de la Tarde,1:00pm-05:00pm,SHOW TVN,35,1,1,100,matched
+2025-12-19,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-19,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-19,TVN,Rot. Vespertina,1:00pm-05:00pm,GORDITO DEL ZODIACO,10,1,1,100,matched
+2025-12-20,MEDCOM,A lo Panameño,7:00pm- 8:00pm,TELEMETRO REP.FIN DE SEMANA,35,1,1,100,matched
+2025-12-20,MEDCOM,A lo Panameño,7:00pm- 8:00pm,TELEMETRO REP.FIN DE SEMANA,10,1,1,100,matched
+2025-12-20,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,35,1,1,100,matched
+2025-12-20,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,10,1,1,100,matched
+2025-12-20,TVN,Hecho en Panama,7:00pm-8:00pm,HECHO EN PANAMA,35,1,1,100,matched
+2025-12-20,TVN,Not. Fin de Semana,6:00pm-7:00pm,HECHO EN PANAMA,35,1,1,100,matched
+2025-12-21,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,35,1,1,100,matched
+2025-12-21,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,ENCHANTED CHRISTMAS,10,1,1,100,matched
+2025-12-21,MEDCOM,Peliculas,7:00pm- 10:00pm,ENCHANTED CHRISTMAS,35,1,1,100,matched
+2025-12-21,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,35,1,1,100,matched
+2025-12-21,TVN,Peliculas,7:00pm-10:00pm,DOG,35,1,1,100,matched
+2025-12-22,MEDCOM,Noticiero Matutino,6:00am-08:00am,TU MANANA,35,1,1,100,matched
+2025-12-22,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-22,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-22,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,10,1,1,100,matched
+2025-12-22,MEDCOM,Tu Mañana,8:00am-11:30am,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-22,MEDCOM,Tu Mañana,8:00am-11:30am,TELEMETRO REPORTA MATUTIN,10,1,1,100,matched
+2025-12-22,TVN,Fam. de la Tarde,1:00pm-05:00pm,AMOR AMARGO,35,1,1,100,matched
+2025-12-22,TVN,Jelou,8:00am-11:30am,JELOU,35,1,1,100,matched
+2025-12-22,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-22,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-22,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-22,TVN,Rot. Vespertina,1:00pm-05:00pm,SHOW TVN,10,1,1,100,matched
+2025-12-23,MEDCOM,Noticiero Matutino,6:00am-08:00am,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-23,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-23,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,10,1,1,100,matched
+2025-12-23,MEDCOM,Tu Mañana,8:00am-11:30am,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-23,MEDCOM,Tu Mañana,8:00am-11:30am,TELEMETRO REPORTA MATUTIN,10,1,1,100,matched
+2025-12-23,TVN,Fam. de la Tarde,1:00pm-05:00pm,AMOR AMARGO,35,1,1,100,matched
+2025-12-23,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-23,TVN,Jelou,8:00am-11:30am,JELOU,10,1,1,100,matched
+2025-12-23,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-23,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-23,TVN,Rot. Vespertina,1:00pm-05:00pm,CONTIGO SI POR SIEMPRE,10,1,1,100,matched
+2025-12-26,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-26,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-26,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-26,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,35,1,1,100,matched
+2025-12-26,MEDCOM,Tu Mañana,8:00am-11:30am,TELEMETRO REPORTA MATUTIN,10,1,1,100,matched
+2025-12-26,TVN,Fam. de la Tarde,1:00pm-05:00pm,CONTIGO SI POR SIEMPRE,35,1,1,100,matched
+2025-12-26,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-26,TVN,Noticiero Matutino,6:00am-08:00am,CORAZON DE MADRE,10,1,1,100,matched
+2025-12-26,TVN,Rot. Vespertina,1:00pm-05:00pm,CONTIGO SI POR SIEMPRE,10,1,1,100,matched
+2025-12-27,TVN,Hecho en Panama,7:00pm-8:00pm,TVN NOTICIAS FIN DE SEMANA,35,1,1,100,matched
+2025-12-27,TVN,Not. Fin de Semana,6:00pm-7:00pm,HECHO EN PANAMA,35,1,1,100,matched
+2025-12-28,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,10,1,1,100,matched
+2025-12-29,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-29,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA MATUTIN,10,1,1,100,matched
+2025-12-29,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-29,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,10,1,1,100,matched
+2025-12-29,TVN,Fam. de la Tarde,1:00pm-05:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-29,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-29,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-29,TVN,Noticiero Matutino,6:00am-08:00am,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-29,TVN,Rot. Vespertina,1:00pm-05:00pm,SUENOS ROBADOS,10,1,1,100,matched
+2025-12-30,MEDCOM,Noticiero Matutino,6:00am-08:00am,UNA VIDA PERFECTA,10,1,1,100,matched
+2025-12-30,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-30,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-30,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,35,1,1,100,matched
+2025-12-30,TVN,Fam. de la Tarde,1:00pm-05:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-30,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-30,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-30,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-30,TVN,Rot. Vespertina,1:00pm-05:00pm,SUENOS ROBADOS,10,1,1,100,matched
+2025-12-02,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-02,TVN,Noticiero Estelar,6:00pm-08:00pm,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-03,MEDCOM,Loteria,3:00pm-3:30pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-03,MEDCOM,Loteria,3:00pm-3:30pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-03,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-03,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-03,MEDCOM,Tarde  Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-03,MEDCOM,Tarde Vespertina,1:00pm-05:00pm,LOTERIA,10,1,1,100,matched
+2025-12-03,MEDCOM,Tu Mañana,8:00am-11:30pm,TU MANANA,35,1,1,100,matched
+2025-12-03,TVN,Jelou,8:00am-11:30pm,JELOU,35,1,1,100,matched
+2025-12-03,TVN,Jelou,8:00am-11:30pm,JELOU,10,1,1,100,matched
+2025-12-03,TVN,Loteria,3:00pm-3:30pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-03,TVN,Loteria,3:00pm-3:30pm,LOTERIA,10,1,1,100,matched
+2025-12-03,TVN,Noticiero Estelar,6:00pm-08:00pm,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-03,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-03,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-03,TVN,Rot. Vespertina,1:00pm-5:00pm,SUENOS ROBADOS,10,1,1,100,matched
+2025-12-04,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-04,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-04,MEDCOM,Tarde  Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-04,MEDCOM,Tarde Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-04,MEDCOM,Tu Mañana,8:00am-11:30pm,TU MANANA,35,1,1,100,matched
+2025-12-04,MEDCOM,Tu Mañana,8:00am-11:30pm,TU MANANA,10,1,1,100,matched
+2025-12-04,TVN,Jelou,8:00am-11:30pm,JELOU,35,1,1,100,matched
+2025-12-04,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-04,TVN,Rot. Vespertina,1:00pm-5:00pm,TU VIDA ES MI VIDA,10,1,1,100,matched
+2025-12-05,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-05,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,35,1,1,100,matched
+2025-12-05,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-05,MEDCOM,Tarde  Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-05,MEDCOM,Tu Mañana,8:00am-11:30pm,TU MANANA,35,1,1,100,matched
+2025-12-05,TVN,Jelou,8:00am-11:30pm,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-05,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-05,TVN,Noticiero Matutino,6:00am-08:00am,JELOU,10,1,1,100,matched
+2025-12-10,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,ALMA SALVAJE,10,3,1,100,under
+2025-12-10,TVN,Noticiero Estelar,6:00pm-08:00pm,LA NOVIA DE ESTAMBUL,10,3,1,100,under
+2025-12-11,MEDCOM,Noticiero Matutino,6:00am-08:00am,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-11,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,35,1,1,100,matched
+2025-12-11,TVN,Fam. de la Tarde,1:00pm-05:00pm,TU VIDA ES MI VIDA,35,1,1,100,matched
+2025-12-11,TVN,Jelou,8:00am-11:30am,JELOU,10,1,1,100,matched
+2025-12-11,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,3,1,100,under
+2025-12-11,TVN,Noticiero Matutino,6:00am-08:00am,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-12,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,2,1,100,under
+2025-12-15,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-15,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-15,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-15,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-15,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-15,TVN,Noticiero Matutino,6:00am-08:00am,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-15,TVN,Rot. Vespertina,1:00pm-05:00pm,TU VIDA ES MI VIDA,10,1,1,100,matched
+2025-12-16,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-16,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-16,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-16,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,10,1,1,100,matched
+2025-12-16,TVN,Fam. de la Tarde,1:00pm-05:00pm,CONTIGO SI POR SIEMPRE,35,1,1,100,matched
+2025-12-16,TVN,Jelou,8:00am-11:30am,JELOU,10,1,1,100,matched
+2025-12-16,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-17,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-17,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-17,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,10,1,1,100,matched
+2025-12-17,TVN,Jelou,8:00am-11:30am,JELOU,10,1,1,100,matched
+2025-12-17,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-17,TVN,Noticiero Matutino,6:00am-08:00am,NUEVO RICO NUEVO POBRE,10,1,1,100,matched
+2025-12-17,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-18,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-18,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-18,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,35,1,1,100,matched
+2025-12-18,TVN,Fam. de la Tarde,1:00pm-05:00pm,CONTIGO SI POR SIEMPRE,35,1,1,100,matched
+2025-12-18,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-18,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-18,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-18,TVN,Noticiero Matutino,6:00am-08:00am,JELOU,10,1,1,100,matched
+2025-12-19,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-19,MEDCOM,Noticiero Matutino,6:00am-08:00am,PARRANDA NAVIDAD A LO PANAMENO,10,1,1,100,matched
+2025-12-19,TVN,Fam. de la Tarde,1:00pm-05:00pm,GORDITO DEL ZODIACO,35,1,1,100,matched
+2025-12-19,TVN,Jelou,8:00am-11:30am,JELOU,10,1,1,100,matched
+2025-12-19,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-19,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-20,TVN,Hecho en Panama,7:00pm-8:00pm,TVN NOTICIAS FIN DE SEMANA,35,1,1,100,matched
+2025-12-20,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,35,1,1,100,matched
+2025-12-21,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,35,1,1,100,matched
+2025-12-21,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,10,1,1,100,matched
+2025-12-21,MEDCOM,Peliculas,7:00pm- 10:00pm,TELEMETRO REP.FIN DE SEMANA,10,1,1,100,matched
+2025-12-21,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,35,1,1,100,matched
+2025-12-22,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-22,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-22,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-22,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,10,1,1,100,matched
+2025-12-22,TVN,Jelou,8:00am-11:30am,JELOU,10,1,1,100,matched
+2025-12-22,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-22,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,10,1,1,100,matched
+2025-12-22,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-23,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,35,1,1,100,matched
+2025-12-23,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-23,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-23,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-23,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,10,1,1,100,matched
+2025-12-23,TVN,Fam. de la Tarde,1:00pm-05:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-23,TVN,Jelou,8:00am-11:30am,JELOU,10,1,1,100,matched
+2025-12-23,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-23,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-23,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,10,1,1,100,matched
+2025-12-23,TVN,Rot. Vespertina,1:00pm-05:00pm,AMOR AMARGO,10,1,1,100,matched
+2025-12-01,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-01,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,35,1,1,100,matched
+2025-12-01,MEDCOM,Novela Estelar,8:00pm-11:00pm,TU MANANA,10,1,1,100,matched
+2025-12-01,TVN,Noticiero Estelar,6:00pm-08:00pm,JELOU,35,1,1,100,matched
+2025-12-01,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-01,TVN,Novela Estelar,8:00pm-11:00pm,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-02,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-02,MEDCOM,Novela Estelar,8:00pm-11:00pm,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-02,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,10,1,1,100,matched
+2025-12-02,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-02,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-02,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-03,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,ALMA SALVAJE,35,1,1,100,matched
+2025-12-03,MEDCOM,Novela Estelar,8:00pm-11:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-03,MEDCOM,Tu Mañana,8:00am-11:30am,TU MANANA,35,1,1,100,matched
+2025-12-03,TVN,Jelou,8:00am-11:30am,JELOU,35,1,1,100,matched
+2025-12-03,TVN,Noticiero Estelar,6:00pm-08:00pm,CORAZON DE MADRE,35,1,1,100,matched
+2025-12-03,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-04,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-04,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-04,MEDCOM,Novela Estelar,8:00pm-11:00pm,ALMA SALVAJE,35,1,1,100,matched
+2025-12-04,TVN,Noticiero Estelar,6:00pm-08:00pm,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-04,TVN,Noticiero Matutino,6:00am-08:00am,NUEVO RICO NUEVO POBRE,10,1,1,100,matched
+2025-12-04,TVN,Novela Estelar,8:00pm-11:00pm,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-05,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,ALMA SALVAJE,35,1,1,100,matched
+2025-12-05,MEDCOM,Novela Estelar,8:00pm-11:00pm,ALMA SALVAJE,10,1,1,100,matched
+2025-12-05,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-05,TVN,Fam. de la Tarde,1:00pm-5:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-05,TVN,Noticiero Estelar,6:00pm-08:00pm,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-05,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-06,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,35,1,1,100,matched
+2025-12-06,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,35,1,1,100,matched
+2025-12-07,MEDCOM,Loteria,3:00pm-3:30pm,LOTERIA,35,1,1,100,matched
+2025-12-07,TVN,Loteria,3:00pm-3:30pm,LOTERIA,35,1,1,100,matched
+2025-12-08,MEDCOM,Novela Estelar,8:00pm-11:00pm,ALMA SALVAJE,10,1,1,100,matched
+2025-12-08,TVN,Novela Estelar,8:00pm-11:00pm,NUEVO RICO NUEVO POBRE,10,1,1,100,matched
+2025-12-09,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-09,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-09,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-09,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-09,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-09,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,35,1,1,100,matched
+2025-12-10,MEDCOM,Novela Estelar,8:00pm-11:00pm,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-10,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,35,1,1,100,matched
+2025-12-10,TVN,Fam. de la Tarde,1:00pm-5:00pm,SUENOS ROBADOS,35,1,1,100,matched
+2025-12-10,TVN,Novela Estelar,8:00pm-11:00pm,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-11,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,1,1,100,matched
+2025-12-11,TVN,Noticiero Estelar,6:00pm-08:00pm,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-14,MEDCOM,Loteria,3:00pm-3:30pm,LOTERIA,35,1,1,100,matched
+2025-12-14,TVN,Loteria,3:00pm-3:30pm,LOTERIA,35,1,1,100,matched
+2025-12-15,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,AMANECER,10,1,1,100,matched
+2025-12-15,MEDCOM,Noticiero Matutino,6:00am-08:00am,AMANECER,35,1,1,100,matched
+2025-12-15,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-15,MEDCOM,Novela Estelar,8:00pm-11:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-15,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-15,TVN,Noticiero Matutino,6:00am-08:00am,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-15,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,10,1,1,100,matched
+2025-12-15,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-16,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-16,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,UNA VIDA PERFECTA,10,1,1,100,matched
+2025-12-16,MEDCOM,Novela Estelar,8:00pm-11:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-16,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-16,TVN,Noticiero Estelar,6:00pm-08:00pm,NUEVO RICO NUEVO POBRE,10,1,1,100,matched
+2025-12-16,TVN,Novela Estelar,8:00pm-11:00pm,NUEVO RICO NUEVO POBRE,10,1,1,100,matched
+2025-12-17,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-17,MEDCOM,Novela Estelar,8:00pm-11:00pm,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-17,MEDCOM,Novela Estelar,8:00pm-11:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-17,MEDCOM,Novela Vespertina,1:00pm-05:00pm,MI PECADO,35,1,1,100,matched
+2025-12-17,TVN,Fam. de la Tarde,1:00pm-5:00pm,CONTIGO SI POR SIEMPRE,35,1,1,100,matched
+2025-12-17,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-17,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-17,TVN,Novela Estelar,8:00pm-11:00pm,CORAZON DE MADRE,10,1,1,100,matched
+2025-12-18,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-18,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,UNA VIDA PERFECTA,10,1,1,100,matched
+2025-12-18,MEDCOM,Noticiero Matutino,6:00am-08:00am,TU MANANA,35,1,1,100,matched
+2025-12-18,MEDCOM,Noticiero Matutino,6:00am-08:00am,UNA VIDA PERFECTA,10,1,1,100,matched
+2025-12-18,MEDCOM,Novela Estelar,8:00pm-11:00pm,TELEMETRO REPORTA ESTELAR,10,1,1,100,matched
+2025-12-18,TVN,Noticiero Estelar,6:00pm-08:00pm,LA NOVIA DE ESTAMBUL,35,1,1,100,matched
+2025-12-18,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-18,TVN,Noticiero Matutino,6:00am-08:00am,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-18,TVN,Noticiero Matutino,6:00am-08:00am,CORAZON DE MADRE,10,1,1,100,matched
+2025-12-18,TVN,Novela Estelar,8:00pm-11:00pm,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-19,TVN,Noticiero Estelar,6:00pm-08:00pm,CORAZON DE MADRE,10,1,1,100,matched
+2025-12-19,TVN,Novela Estelar,8:00pm-11:00pm,CORAZON DE MADRE,35,1,1,100,matched
+2025-12-19,TVN,Novela Estelar,8:00pm-11:00pm,CORAZON DE MADRE,10,1,1,100,matched
+2025-12-21,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,35,1,1,100,matched
+2025-12-21,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,35,1,1,100,matched
+2025-12-22,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-22,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,UNA VIDA PERFECTA,10,1,1,100,matched
+2025-12-22,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-22,MEDCOM,Novela Estelar,8:00pm-11:00pm,ALMA SALVAJE,10,1,1,100,matched
+2025-12-22,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,35,1,1,100,matched
+2025-12-22,TVN,Noticiero Estelar,6:00pm-08:00pm,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-23,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TU MANANA,35,1,1,100,matched
+2025-12-23,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,ALMA SALVAJE,10,1,1,100,matched
+2025-12-23,MEDCOM,Novela Estelar,8:00pm-11:00pm,UNA VIDA PERFECTA,10,1,1,100,matched
+2025-12-23,MEDCOM,Tu Mañana,8:00am-11:30am,TELEMETRO REPORTA MATUTIN,10,1,1,100,matched
+2025-12-23,TVN,Jelou,8:00am-11:30am,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-23,TVN,Noticiero Estelar,6:00pm-08:00pm,JELOU,35,1,1,100,matched
+2025-12-23,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS A M,10,1,1,100,matched
+2025-12-23,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-24,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-24,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-26,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA MATUTIN,10,1,1,100,matched
+2025-12-26,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS,10,1,1,100,matched
+2025-12-28,MEDCOM,Loteria,3:00pm-3:30pm,LOTERIA,35,1,1,100,matched
+2025-12-28,TVN,Loteria,3:00pm-3:30pm,LOTERIA,35,1,1,100,matched
+2025-12-29,MEDCOM,Noticiero Matutino,6:00am-08:00am,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-29,MEDCOM,Novela Estelar,8:00pm-11:00pm,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-29,MEDCOM,Novela Estelar,8:00pm-11:00pm,ALMA SALVAJE,10,1,1,100,matched
+2025-12-29,MEDCOM,Novela Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,1,1,100,matched
+2025-12-29,TVN,Fam. de la Tarde,1:00pm-5:00pm,AMOR AMARGO,10,1,1,100,matched
+2025-12-29,TVN,Noticiero Matutino,6:00am-08:00am,LA NOVIA DE ESTAMBUL,35,1,1,100,matched
+2025-12-29,TVN,Novela Estelar,8:00pm-11:00pm,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-29,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-30,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,UNA VIDA PERFECTA,35,1,1,100,matched
+2025-12-30,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,ALMA SALVAJE,10,1,1,100,matched
+2025-12-30,MEDCOM,Noticiero Matutino,6:00am-08:00am,ALMA SALVAJE,10,1,1,100,matched
+2025-12-30,MEDCOM,Novela Estelar,8:00pm-11:00pm,UNA VIDA PERFECTA,10,1,1,100,matched
+2025-12-30,TVN,Noticiero Estelar,6:00pm-08:00pm,NUEVO RICO NUEVO POBRE,35,1,1,100,matched
+2025-12-30,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,1,1,100,matched
+2025-12-30,TVN,Noticiero Matutino,6:00am-08:00am,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-31,MEDCOM,Noticiero Matutino,6:00am-08:00am,TELEMETRO REPORTA MATUTIN,35,1,1,100,matched
+2025-12-31,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,1,1,100,matched
+2025-12-31,TVN,Novela Estelar,8:00pm-11:00pm,LA NOVIA DE ESTAMBUL,10,1,1,100,matched
+2025-12-12,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,2,2,100,matched
+2025-12-12,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, TVN NOTICIAS A M",35,2,2,100,matched
+2025-12-12,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,3,2,100,under
+2025-12-15,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, AMANECER",35,2,2,100,matched
+2025-12-15,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",10,2,2,100,matched
+2025-12-15,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA MATUTIN,10,2,2,100,matched
+2025-12-15,TVN,Noticiero Estelar,6:00pm-08:00pm,"CORAZON DE MADRE, LA NOVIA DE ESTAMBUL",35,2,2,100,matched
+2025-12-15,TVN,Novela Estelar,8:00pm-11:00pm,"JELOU, TVN NOTICIAS A M",35,2,2,100,matched
+2025-12-16,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,2,2,100,matched
+2025-12-16,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",10,2,2,100,matched
+2025-12-16,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA MATUTIN,10,2,2,100,matched
+2025-12-16,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",35,2,2,100,matched
+2025-12-16,TVN,Novela Estelar,8:00pm-11:00pm,"LA NOVIA DE ESTAMBUL, TVN NOTICIAS",35,2,2,100,matched
+2025-12-17,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,ALMA SALVAJE,35,2,2,100,matched
+2025-12-17,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",10,2,2,100,matched
+2025-12-17,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA ESTELAR,10,2,2,100,matched
+2025-12-17,TVN,Noticiero Estelar,6:00pm-08:00pm,"LA NOVIA DE ESTAMBUL, TVN NOTICIAS",35,2,2,100,matched
+2025-12-17,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS, NUEVO RICO NUEVO POBRE",35,2,2,100,matched
+2025-12-18,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,2,2,100,matched
+2025-12-18,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",10,2,2,100,matched
+2025-12-18,MEDCOM,Novela Estelar,8:00pm-10:30pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",10,2,2,100,matched
+2025-12-18,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, NUEVO RICO NUEVO POBRE",35,2,2,100,matched
+2025-12-19,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,UNA VIDA PERFECTA,35,2,2,100,matched
+2025-12-19,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, PARRANDA NAVIDAD A LO PANAMENO",10,2,2,100,matched
+2025-12-19,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA ESTELAR,35,2,2,100,matched
+2025-12-19,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA ESTELAR,10,2,2,100,matched
+2025-12-19,TVN,Noticiero Estelar,6:00pm-08:00pm,"LA NOVIA DE ESTAMBUL, TVN NOTICIAS",35,2,2,100,matched
+2025-12-19,TVN,Novela Estelar,8:00pm-11:00pm,"NUEVO RICO NUEVO POBRE, CORAZON DE MADRE",35,2,2,100,matched
+2025-12-20,TVN,Hecho en Panama,7:00pm-8:00pm,HECHO EN PANAMA,10,2,2,100,matched
+2025-12-20,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,10,2,2,100,matched
+2025-12-21,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,10,2,2,100,matched
+2025-12-22,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, UNA VIDA PERFECTA",35,2,2,100,matched
+2025-12-22,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",10,2,2,100,matched
+2025-12-22,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, TELEMETRO REPORTA ESTELAR",10,2,2,100,matched
+2025-12-22,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,35,2,2,100,matched
+2025-12-22,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS, NUEVO RICO NUEVO POBRE",35,2,2,100,matched
+2025-12-22,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,2,2,100,matched
+2025-12-23,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",35,2,2,100,matched
+2025-12-23,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",10,2,2,100,matched
+2025-12-23,MEDCOM,Novela Estelar,8:00pm-10:30pm,"TU MANANA, TELEMETRO REPORTA ESTELAR",10,2,2,100,matched
+2025-12-23,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, NUEVO RICO NUEVO POBRE",35,2,2,100,matched
+2025-12-23,TVN,Novela Estelar,8:00pm-11:00pm,"LA NOVIA DE ESTAMBUL, NUEVO RICO NUEVO POBRE",35,2,2,100,matched
+2025-12-23,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,2,2,100,matched
+2025-12-26,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,2,2,100,matched
+2025-12-26,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",10,2,2,100,matched
+2025-12-26,MEDCOM,Novela Estelar,8:00pm-10:30pm,ALMA SALVAJE,35,2,2,100,matched
+2025-12-26,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, UNA VIDA PERFECTA",10,2,2,100,matched
+2025-12-26,MEDCOM,Novela Vespertina,1:00pm-05:00pm,"LA ROSA DE GUADALUPE, MI PECADO",35,2,2,100,matched
+2025-12-26,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS A M, TVN NOTICIAS",35,2,2,100,matched
+2025-12-26,TVN,Novela Estelar,8:00pm-11:00pm,"LA NOVIA DE ESTAMBUL, NUEVO RICO NUEVO POBRE",35,2,2,100,matched
+2025-12-26,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS A M,10,2,2,100,matched
+2025-12-27,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,10,2,2,100,matched
+2025-12-27,TVN,Hecho en Panama,7:00pm-8:00pm,TVN NOTICIAS FIN DE SEMANA,10,2,2,100,matched
+2025-12-27,TVN,Not. Fin de Semana,6:00pm-7:00pm,HECHO EN PANAMA,10,2,2,100,matched
+2025-12-28,MEDCOM,Noti. Fin de Semana,6:00pm-7:00pm,TELEMETRO REP.FIN DE SEMANA,35,2,2,100,matched
+2025-12-28,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,10,2,2,100,matched
+2025-12-29,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"ALMA SALVAJE, TELEMETRO REPORTA MATUTIN",10,2,2,100,matched
+2025-12-29,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA ESTELAR,35,2,2,100,matched
+2025-12-29,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS A M, LA NOVIA DE ESTAMBUL",35,2,2,100,matched
+2025-12-29,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS A M, TVN NOTICIAS",35,2,2,100,matched
+2025-12-29,TVN,Novela Estelar,8:00pm-11:00pm,JELOU,10,2,2,100,matched
+2025-12-30,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",10,2,2,100,matched
+2025-12-30,MEDCOM,Novela Estelar,8:00pm-10:30pm,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",35,2,2,100,matched
+2025-12-30,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,35,2,2,100,matched
+2025-12-30,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS A M, LA NOVIA DE ESTAMBUL",35,2,2,100,matched
+2025-12-30,TVN,Novela Estelar,8:00pm-11:00pm,"NUEVO RICO NUEVO POBRE, JELOU",10,2,2,100,matched
+2025-12-02,MEDCOM,Noticiero Estelar,6:00am-08:00pm,"TU MANANA, TELEMETRO REPORTA MATUTIN",10,2,2,100,matched
+2025-12-02,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, JELOU",35,2,2,100,matched
+2025-12-02,TVN,Novela Estelar,8:00pm-10:30pm,"JELOU, TVN NOTICIAS A M",10,2,2,100,matched
+2025-12-03,MEDCOM,Noticiero Estelar,6:00am-08:00pm,"TU MANANA, TELEMETRO REPORTA MATUTIN",10,2,2,100,matched
+2025-12-03,MEDCOM,Noticiero Matutino,6:00am-08:00am,"ALMA SALVAJE, TU MANANA",35,2,2,100,matched
+2025-12-03,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS A M, CORAZON DE MADRE",35,2,2,100,matched
+2025-12-03,TVN,Novela Estelar,8:00pm-10:30pm,"TVN NOTICIAS, TVN NOTICIAS A M",10,2,2,100,matched
+2025-12-04,MEDCOM,Noticiero Estelar,6:00am-08:00pm,"TU MANANA, TELEMETRO REPORTA MATUTIN",10,2,2,100,matched
+2025-12-04,MEDCOM,Noticiero Matutino,6:00am-08:00am,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",10,2,2,100,matched
+2025-12-04,MEDCOM,Novela Estelar,8:00pm-11:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,2,2,100,matched
+2025-12-04,TVN,Jelou,8:00am-11:30pm,"JELOU, TVN NOTICIAS A M",10,2,2,100,matched
+2025-12-04,TVN,Noticiero Estelar,6:00pm-08:00pm,"NUEVO RICO NUEVO POBRE, TVN NOTICIAS A M",35,2,2,100,matched
+2025-12-04,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",10,2,2,100,matched
+2025-12-04,TVN,Noticiero Matutino,6:00am-08:00am,TVN NOTICIAS A M,35,2,2,100,matched
+2025-12-04,TVN,Novela Estelar,8:00pm-10:30pm,TVN NOTICIAS,10,2,2,100,matched
+2025-12-05,MEDCOM,Noticiero Estelar,6:00am-08:00pm,"TELEMETRO REPORTA MATUTIN, TU MANANA",10,2,2,100,matched
+2025-12-05,MEDCOM,Tarde Vespertina,1:00pm-05:00pm,LA ROSA DE GUADALUPE,10,2,2,100,matched
+2025-12-05,MEDCOM,Tu Mañana,8:00am-11:30pm,TU MANANA,10,2,2,100,matched
+2025-12-05,TVN,Jelou,8:00am-11:30pm,"TVN NOTICIAS A M, JELOU",35,2,2,100,matched
+2025-12-05,TVN,Noticiero Estelar,6:00pm-08:00pm,"CORAZON DE MADRE, TVN NOTICIAS A M",35,2,2,100,matched
+2025-12-05,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",10,2,2,100,matched
+2025-12-05,TVN,Novela Estelar,8:00pm-10:30pm,"TVN NOTICIAS A M, TVN NOTICIAS",10,2,2,100,matched
+2025-12-05,TVN,Rot. Vespertina,1:00pm-5:00pm,"CONTIGO SI POR SIEMPRE, SUENOS ROBADOS",10,2,2,100,matched
+2025-12-10,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,ALMA SALVAJE,35,2,2,100,matched
+2025-12-10,MEDCOM,Novela Estelar,8:00pm-10:30pm,"UNA VIDA PERFECTA, TELEMETRO REPORTA ESTELAR",35,2,2,100,matched
+2025-12-10,TVN,Noticiero Estelar,6:00pm-08:00pm,"LA NOVIA DE ESTAMBUL, TVN NOTICIAS",35,2,2,100,matched
+2025-12-10,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",35,2,2,100,matched
+2025-12-11,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",35,2,2,100,matched
+2025-12-11,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, TU MANANA",10,3,2,100,under
+2025-12-11,MEDCOM,Novela Estelar,8:00pm-10:30pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,2,2,100,matched
+2025-12-11,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,35,2,2,100,matched
+2025-12-11,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS A M, TVN NOTICIAS",35,2,2,100,matched
+2025-12-15,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,2,2,100,matched
+2025-12-15,MEDCOM,Novela Estelar,8:00pm-10:30pm,ALMA SALVAJE,35,2,2,100,matched
+2025-12-15,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",35,2,2,100,matched
+2025-12-16,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,2,2,100,matched
+2025-12-16,MEDCOM,Novela Estelar,8:00pm-10:30pm,ALMA SALVAJE,35,2,2,100,matched
+2025-12-16,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS A M,35,2,2,100,matched
+2025-12-17,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,2,2,100,matched
+2025-12-17,MEDCOM,Novela Estelar,8:00pm-10:30pm,ALMA SALVAJE,35,2,2,100,matched
+2025-12-17,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS A M,35,2,2,100,matched
+2025-12-18,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,2,2,100,matched
+2025-12-18,MEDCOM,Novela Estelar,8:00pm-10:30pm,ALMA SALVAJE,35,2,2,100,matched
+2025-12-18,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS, CORAZON DE MADRE",35,2,2,100,matched
+2025-12-19,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"PARRANDA NAVIDAD A LO PANAMENO, TELEMETRO REPORTA ESTELAR",35,2,2,100,matched
+2025-12-19,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA MATUTIN,35,2,2,100,matched
+2025-12-19,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS A M, TVN NOTICIAS",35,2,2,100,matched
+2025-12-20,TVN,Hecho en Panama,7:00pm-8:00pm,"TVN NOTICIAS FIN DE SEMANA, HECHO EN PANAMA",10,2,2,100,matched
+2025-12-21,TVN,Peliculas,7:00pm-10:00pm,DOG,35,2,2,100,matched
+2025-12-22,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TU MANANA, TELEMETRO REPORTA ESTELAR",35,2,2,100,matched
+2025-12-22,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA ESTELAR,35,2,2,100,matched
+2025-12-22,TVN,Noticiero Estelar,6:00pm-08:00pm,"CORAZON DE MADRE, JELOU",35,2,2,100,matched
+2025-12-22,TVN,Noticiero Estelar,6:00pm-08:00pm,"CORAZON DE MADRE, NUEVO RICO NUEVO POBRE",10,2,2,100,matched
+2025-12-22,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS, CORAZON DE MADRE",10,2,2,100,matched
+2025-12-23,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, TELEMETRO REPORTA MATUTIN",35,2,2,100,matched
+2025-12-23,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, UNA VIDA PERFECTA",35,2,2,100,matched
+2025-12-23,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, UNA VIDA PERFECTA",10,2,2,100,matched
+2025-12-23,TVN,Noticiero Estelar,6:00pm-08:00pm,"LA NOVIA DE ESTAMBUL, NUEVO RICO NUEVO POBRE",10,2,2,100,matched
+2025-12-23,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",35,2,2,100,matched
+2025-12-23,TVN,Novela Estelar,8:00pm-11:00pm,"LA NOVIA DE ESTAMBUL, TVN NOTICIAS A M",10,2,2,100,matched
+2025-12-15,MEDCOM,Novela Estelar,8:00pm-10:30pm,"AMANECER, TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,3,3,100,matched
+2025-12-15,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS A M, TVN NOTICIAS, NUEVO RICO NUEVO POBRE",10,3,3,100,matched
+2025-12-15,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,3,3,100,matched
+2025-12-16,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, UNA VIDA PERFECTA, TELEMETRO REPORTA ESTELAR",35,3,3,100,matched
+2025-12-16,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",10,3,3,100,matched
+2025-12-16,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,3,3,100,matched
+2025-12-17,MEDCOM,Novela Estelar,8:00pm-10:30pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,3,3,100,matched
+2025-12-17,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, NUEVO RICO NUEVO POBRE",10,3,3,100,matched
+2025-12-17,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,3,3,100,matched
+2025-12-18,MEDCOM,Novela Estelar,8:00pm-10:30pm,"UNA VIDA PERFECTA, TELEMETRO REPORTA ESTELAR",35,3,3,100,matched
+2025-12-18,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS A M, TVN NOTICIAS, LA NOVIA DE ESTAMBUL",10,3,3,100,matched
+2025-12-18,TVN,Novela Estelar,8:00pm-11:00pm,"LA NOVIA DE ESTAMBUL, TVN NOTICIAS A M, TVN NOTICIAS",35,3,3,100,matched
+2025-12-18,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,3,3,100,matched
+2025-12-19,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, NUEVO RICO NUEVO POBRE",10,3,3,100,matched
+2025-12-19,TVN,Novela Estelar,8:00pm-11:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",10,3,3,100,matched
+2025-12-22,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, UNA VIDA PERFECTA",35,3,3,100,matched
+2025-12-22,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",10,3,3,100,matched
+2025-12-23,MEDCOM,Novela Estelar,8:00pm-10:30pm,TELEMETRO REPORTA ESTELAR,35,3,3,100,matched
+2025-12-23,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, NUEVO RICO NUEVO POBRE",10,3,3,100,matched
+2025-12-26,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS A M, TVN NOTICIAS",10,3,3,100,matched
+2025-12-29,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA MATUTIN, ALMA SALVAJE",35,3,3,100,matched
+2025-12-29,MEDCOM,Novela Estelar,8:00pm-10:30pm,"TU MANANA, ALMA SALVAJE",10,3,3,100,matched
+2025-12-29,TVN,Noticiero Estelar,6:00pm-08:00pm,"LA NOVIA DE ESTAMBUL, TVN NOTICIAS",10,3,3,100,matched
+2025-12-30,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,35,3,3,100,matched
+2025-12-30,MEDCOM,Novela Estelar,8:00pm-10:30pm,"TELEMETRO REPORTA MATUTIN, TU MANANA",10,3,3,100,matched
+2025-12-30,TVN,Noticiero Estelar,6:00pm-08:00pm,TVN NOTICIAS,10,3,3,100,matched
+2025-12-02,MEDCOM,Novela Estelar,8:00pm-11:00pm,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",35,3,3,100,matched
+2025-12-02,MEDCOM,Novela Estelar,8:00pm-11:00pm,"ALMA SALVAJE, TELEMETRO REPORTA ESTELAR",10,3,3,100,matched
+2025-12-02,TVN,Novela Estelar,8:00pm-10:30pm,"TVN NOTICIAS A M, NUEVO RICO NUEVO POBRE, TVN NOTICIAS",35,3,3,100,matched
+2025-12-03,MEDCOM,Novela Estelar,8:00pm-11:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,3,3,100,matched
+2025-12-03,MEDCOM,Novela Estelar,8:00pm-11:00pm,"TELEMETRO REPORTA ESTELAR, TELEMETRO REPORTA MATUTIN",10,3,3,100,matched
+2025-12-03,TVN,Novela Estelar,8:00pm-10:30pm,"TVN NOTICIAS, CORAZON DE MADRE",35,3,3,100,matched
+2025-12-04,MEDCOM,Novela Estelar,8:00pm-11:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",10,3,3,100,matched
+2025-12-04,TVN,Novela Estelar,8:00pm-10:30pm,"TVN NOTICIAS, LA NOVIA DE ESTAMBUL",35,3,3,100,matched
+2025-12-05,MEDCOM,Novela Estelar,8:00pm-11:00pm,"TU MANANA, TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",35,3,3,100,matched
+2025-12-05,MEDCOM,Novela Estelar,8:00pm-11:00pm,"TELEMETRO REPORTA MATUTIN, TELEMETRO REPORTA ESTELAR",10,3,3,100,matched
+2025-12-05,TVN,Novela Estelar,8:00pm-10:30pm,"TVN NOTICIAS, CORAZON DE MADRE, LA NOVIA DE ESTAMBUL",35,3,3,100,matched
+2025-12-15,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,3,3,100,matched
+2025-12-15,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, AMANECER",10,3,3,100,matched
+2025-12-15,TVN,Noticiero Estelar,6:00pm-08:00pm,"CORAZON DE MADRE, LA NOVIA DE ESTAMBUL",10,3,3,100,matched
+2025-12-15,TVN,Novela Estelar,8:00pm-11:00pm,"NUEVO RICO NUEVO POBRE, JELOU",10,3,3,100,matched
+2025-12-16,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,3,3,100,matched
+2025-12-16,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, UNA VIDA PERFECTA",10,3,3,100,matched
+2025-12-16,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, CORAZON DE MADRE",10,3,3,100,matched
+2025-12-16,TVN,Novela Estelar,8:00pm-11:00pm,"LA NOVIA DE ESTAMBUL, NUEVO RICO NUEVO POBRE",10,3,3,100,matched
+2025-12-17,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, ALMA SALVAJE",10,3,3,100,matched
+2025-12-17,MEDCOM,Novela Estelar,8:00pm-10:30pm,"UNA VIDA PERFECTA, TU MANANA",10,3,3,100,matched
+2025-12-17,TVN,Noticiero Estelar,6:00pm-08:00pm,"TVN NOTICIAS, CORAZON DE MADRE, LA NOVIA DE ESTAMBUL",10,3,3,100,matched
+2025-12-17,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,3,3,100,matched
+2025-12-18,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,3,3,100,matched
+2025-12-18,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, UNA VIDA PERFECTA",10,3,3,100,matched
+2025-12-18,TVN,Noticiero Estelar,6:00pm-08:00pm,"CORAZON DE MADRE, LA NOVIA DE ESTAMBUL, NUEVO RICO NUEVO POBRE",10,3,3,100,matched
+2025-12-18,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,3,3,100,matched
+2025-12-19,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,"TELEMETRO REPORTA ESTELAR, UNA VIDA PERFECTA",10,3,3,100,matched
+2025-12-19,MEDCOM,Novela Estelar,8:00pm-10:30pm,"TELEMETRO REPORTA ESTELAR, UNA VIDA PERFECTA",10,3,3,100,matched
+2025-12-19,TVN,Noticiero Estelar,6:00pm-08:00pm,"NUEVO RICO NUEVO POBRE, TVN NOTICIAS",10,3,3,100,matched
+2025-12-19,TVN,Novela Estelar,8:00pm-11:00pm,TVN NOTICIAS,10,3,3,100,matched
+2025-12-20,TVN,Not. Fin de Semana,6:00pm-7:00pm,"HECHO EN PANAMA, TVN NOTICIAS FIN DE SEMANA",10,3,3,100,matched
+2025-12-21,TVN,Not. Fin de Semana,6:00pm-7:00pm,TVN NOTICIAS FIN DE SEMANA,10,3,3,100,matched
+2025-12-22,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,3,3,100,matched
+2025-12-22,MEDCOM,Novela Estelar,8:00pm-10:30pm,"ALMA SALVAJE, UNA VIDA PERFECTA",10,3,3,100,matched
+2025-12-23,MEDCOM,Noticiero Estelar,6:00pm-08:00pm,TELEMETRO REPORTA ESTELAR,10,3,3,100,matched
+
+Date,Medio,Original Title,Franja,Time Range,Duration,Insertions,Reason
+2025-12-01,MEDCOM,LA ROSA DE GUADALUPE,TARDE,1:00 PM - 5:00 PM,35,1,No Matching Budget
+2025-12-01,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-01,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,35,1,Exceeded Order Qty
+2025-12-01,MEDCOM,TELEMETRO REPORTA MATUTIN,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-01,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-01,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-01,MEDCOM,TELEMETRO REPORTA MATUTIN,MANANA,6:00 AM - 11:30 AM,35,1,Exceeded Order Qty
+2025-12-01,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-01,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-01,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-01,TVN,SUENOS ROBADOS,TARDE,1:00 PM - 5:00 PM,35,1,No Matching Budget
+2025-12-01,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-01,TVN,TVN NOTICIAS A M,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-01,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-01,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-01,TVN,TVN NOTICIAS A M,MANANA,6:00 AM - 11:30 AM,35,1,Exceeded Order Qty
+2025-12-01,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-01,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-01,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-02,MEDCOM,LA ROSA DE GUADALUPE,TARDE,1:00 PM - 5:00 PM,35,1,No Matching Budget
+2025-12-02,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,2,Exceeded Order Qty
+2025-12-02,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-02,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,35,2,Exceeded Order Qty
+2025-12-02,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-02,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-02,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-02,TVN,AMOR AMARGO,TARDE,1:00 PM - 5:00 PM,35,1,No Matching Budget
+2025-12-02,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-02,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,10,2,Exceeded Order Qty
+2025-12-02,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,35,3,Exceeded Order Qty
+2025-12-02,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-02,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-02,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-02,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-02,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-02,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-03,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,2,Exceeded Order Qty
+2025-12-03,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-03,MEDCOM,LOTERIA,TARDE,1:00 PM - 5:00 PM,35,1,Exceeded Order Qty
+2025-12-03,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-03,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-03,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-03,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-03,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,10,2,Exceeded Order Qty
+2025-12-03,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-03,TVN,LOTERIA,TARDE,1:00 PM - 5:00 PM,35,1,Exceeded Order Qty
+2025-12-03,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-03,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-03,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,35,1,Exceeded Order Qty
+2025-12-03,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-03,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-03,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-04,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-04,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-04,MEDCOM,LA ROSA DE GUADALUPE,TARDE,1:00 PM - 5:00 PM,35,1,Exceeded Order Qty
+2025-12-04,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-04,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-04,MEDCOM,TELEMETRO REPORTA MATUTIN,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-04,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-04,TVN,CONTIGO SI POR SIEMPRE,TARDE,1:00 PM - 5:00 PM,35,1,No Matching Budget
+2025-12-04,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,10,2,Exceeded Order Qty
+2025-12-04,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-04,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,35,1,Exceeded Order Qty
+2025-12-04,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-04,TVN,TVN NOTICIAS A M,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-04,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-04,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-05,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-05,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-05,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-05,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-05,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-05,MEDCOM,MI PECADO,TARDE,1:00 PM - 5:00 PM,35,1,Exceeded Order Qty
+2025-12-05,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-05,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-05,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-05,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-05,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,35,2,Exceeded Order Qty
+2025-12-05,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-05,TVN,CONTIGO SI POR SIEMPRE,TARDE,1:00 PM - 5:00 PM,35,1,Exceeded Order Qty
+2025-12-05,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-05,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-15,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-15,MEDCOM,AMANECER,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-15,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-15,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,10,2,Exceeded Order Qty
+2025-12-16,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,10,2,Exceeded Order Qty
+2025-12-16,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-16,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-16,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-16,TVN,SUENOS ROBADOS,TARDE,1:00 PM - 5:00 PM,35,1,Exceeded Order Qty
+2025-12-16,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,35,1,Exceeded Order Qty
+2025-12-16,TVN,TVN NOTICIAS,NOCTURNO,6:00 PM - 11:00 PM,10,3,Exceeded Order Qty
+2025-12-16,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-16,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-16,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-17,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-17,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-17,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-17,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-17,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-17,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-17,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-18,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-18,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-18,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-18,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,35,1,Exceeded Order Qty
+2025-12-18,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-19,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-22,MEDCOM,ALMA SALVAJE,NOCTURNO,6:00 PM - 11:00 PM,35,2,Exceeded Order Qty
+2025-12-22,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,35,2,Exceeded Order Qty
+2025-12-22,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-22,TVN,LA NOVIA DE ESTAMBUL,NOCTURNO,6:00 PM - 11:00 PM,35,1,Exceeded Order Qty
+2025-12-23,MEDCOM,LA ROSA DE GUADALUPE,TARDE,1:00 PM - 5:00 PM,10,2,Exceeded Order Qty
+2025-12-23,MEDCOM,TELEMETRO REPORTA MATUTIN,MANANA,6:00 AM - 11:30 AM,10,1,Exceeded Order Qty
+2025-12-23,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,10,2,Exceeded Order Qty
+2025-12-23,TVN,CORAZON DE MADRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-23,TVN,CONTIGO SI POR SIEMPRE,TARDE,1:00 PM - 5:00 PM,10,1,Exceeded Order Qty
+2025-12-23,TVN,SUENOS ROBADOS,TARDE,1:00 PM - 5:00 PM,10,1,Exceeded Order Qty
+2025-12-23,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,10,3,Exceeded Order Qty
+2025-12-24,MEDCOM,TELEMETRO REPORTA MATUTIN,MANANA,6:00 AM - 11:30 AM,10,2,No Matching Budget
+2025-12-24,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,10,2,No Matching Budget
+2025-12-24,TVN,TVN NOTICIAS A M,MANANA,6:00 AM - 11:30 AM,10,2,No Matching Budget
+2025-12-24,TVN,AMOR AMARGO,TARDE,1:00 PM - 5:00 PM,10,1,No Matching Budget
+2025-12-24,TVN,CONTIGO SI POR SIEMPRE,TARDE,1:00 PM - 5:00 PM,10,1,No Matching Budget
+2025-12-24,TVN,SUENOS ROBADOS,TARDE,1:00 PM - 5:00 PM,10,1,No Matching Budget
+2025-12-24,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,10,2,No Matching Budget
+2025-12-26,MEDCOM,LA ROSA DE GUADALUPE,TARDE,1:00 PM - 5:00 PM,10,1,Exceeded Order Qty
+2025-12-26,MEDCOM,MI PECADO,TARDE,1:00 PM - 5:00 PM,10,1,Exceeded Order Qty
+2025-12-26,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,10,2,Exceeded Order Qty
+2025-12-26,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-29,MEDCOM,MI PECADO,TARDE,1:00 PM - 5:00 PM,10,1,Exceeded Order Qty
+2025-12-29,MEDCOM,UNA VIDA PERFECTA,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-29,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,10,2,Exceeded Order Qty
+2025-12-29,TVN,CONTIGO SI POR SIEMPRE,TARDE,1:00 PM - 5:00 PM,10,1,Exceeded Order Qty
+2025-12-29,TVN,SUENOS ROBADOS,TARDE,1:00 PM - 5:00 PM,10,1,Exceeded Order Qty
+2025-12-29,TVN,NUEVO RICO NUEVO POBRE,NOCTURNO,6:00 PM - 11:00 PM,10,1,Exceeded Order Qty
+2025-12-30,MEDCOM,MI PECADO,TARDE,1:00 PM - 5:00 PM,10,1,Exceeded Order Qty
+2025-12-30,MEDCOM,TELEMETRO REPORTA ESTELAR,NOCTURNO,6:00 PM - 11:00 PM,10,2,Exceeded Order Qty
+
+Date,Medio,Original Title,Franja,Time Range,Duration,Insertions,Reason
+2025-12-04,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-04,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-04,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,55,1,Non-Standard Duration
+2025-12-04,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,140,1,Non-Standard Duration
+2025-12-04,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,280,1,Non-Standard Duration
+2025-12-05,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-05,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-05,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,8,1,Non-Standard Duration
+2025-12-05,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-05,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,250,1,Non-Standard Duration
+2025-12-10,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,3,Non-Standard Duration
+2025-12-10,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-10,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-10,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-10,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,140,1,Non-Standard Duration
+2025-12-10,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,195,1,Non-Standard Duration
+2025-12-11,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-11,MEDCOM,LA ROSA DE GUADALUPE,TARDE,1:00 PM - 5:00 PM,7,2,Non-Standard Duration
+2025-12-11,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-11,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-11,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-11,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-11,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-12,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-12,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,105,1,Non-Standard Duration
+2025-12-12,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,115,1,Non-Standard Duration
+2025-12-12,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-12,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-12,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-12,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-12,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,180,1,Non-Standard Duration
+2025-12-12,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,170,1,Non-Standard Duration
+2025-12-12,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-15,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,8,1,Non-Standard Duration
+2025-12-15,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-15,MEDCOM,LA ROSA DE GUADALUPE,TARDE,1:00 PM - 5:00 PM,7,1,Non-Standard Duration
+2025-12-15,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-15,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-15,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,195,2,Non-Standard Duration
+2025-12-15,TVN,TVN NOTICIAS EDICION MEDIO DIA,TARDE,1:00 PM - 5:00 PM,30,1,Non-Standard Duration
+2025-12-16,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-16,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,140,1,Non-Standard Duration
+2025-12-16,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-16,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-16,TVN,TVN NOTICIAS EDICION MEDIO DIA,TARDE,1:00 PM - 5:00 PM,30,1,Non-Standard Duration
+2025-12-17,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,8,2,Non-Standard Duration
+2025-12-17,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,175,1,Non-Standard Duration
+2025-12-17,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,195,1,Non-Standard Duration
+2025-12-17,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-18,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-18,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,180,1,Non-Standard Duration
+2025-12-18,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,160,1,Non-Standard Duration
+2025-12-18,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-18,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,3,Non-Standard Duration
+2025-12-19,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,8,1,Non-Standard Duration
+2025-12-19,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-19,MEDCOM,GORDITO DEL ZODIACO,TARDE,1:00 PM - 5:00 PM,7,1,Non-Standard Duration
+2025-12-19,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,9,2,Non-Standard Duration
+2025-12-19,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,3,Non-Standard Duration
+2025-12-19,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,140,2,Non-Standard Duration
+2025-12-19,TVN,JELOU-R,MADRUDAGA,N/A,7,1,Non-Standard Duration
+2025-12-19,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-19,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-22,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,8,1,Non-Standard Duration
+2025-12-22,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,9,2,Non-Standard Duration
+2025-12-22,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-22,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,175,1,Non-Standard Duration
+2025-12-22,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,160,1,Non-Standard Duration
+2025-12-22,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,4,Non-Standard Duration
+2025-12-23,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,8,2,Non-Standard Duration
+2025-12-23,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-23,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,105,1,Non-Standard Duration
+2025-12-23,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,115,1,Non-Standard Duration
+2025-12-23,MEDCOM,TELEMETRO REP.1RA.EDICION,TARDE,1:00 PM - 5:00 PM,7,1,Non-Standard Duration
+2025-12-23,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-23,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-23,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,9,2,Non-Standard Duration
+2025-12-23,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,3,Non-Standard Duration
+2025-12-23,TVN,JELOU-R,MADRUDAGA,N/A,7,2,Non-Standard Duration
+2025-12-24,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,8,2,Non-Standard Duration
+2025-12-26,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-26,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,9,1,Non-Standard Duration
+2025-12-26,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-26,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-26,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-29,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,8,3,Non-Standard Duration
+2025-12-29,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-29,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,9,1,Non-Standard Duration
+2025-12-29,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-29,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-29,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,175,1,Non-Standard Duration
+2025-12-29,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,195,1,Non-Standard Duration
+2025-12-29,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-29,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-30,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,3,Non-Standard Duration
+2025-12-30,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,140,1,Non-Standard Duration
+2025-12-30,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,190,1,Non-Standard Duration
+2025-12-30,MEDCOM,MI PECADO,TARDE,1:00 PM - 5:00 PM,7,1,Non-Standard Duration
+2025-12-30,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-30,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,9,1,Non-Standard Duration
+2025-12-30,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,2,Non-Standard Duration
+2025-12-30,TVN,JELOU-R,MADRUDAGA,N/A,7,2,Non-Standard Duration
+2025-12-30,TVN,JELOU,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
+2025-12-31,MEDCOM,TU MANANA,MANANA,6:00 AM - 11:30 AM,7,1,Non-Standard Duration
