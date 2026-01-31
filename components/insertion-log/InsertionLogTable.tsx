@@ -18,7 +18,7 @@ interface InsertionLogTableProps {
     summary: InsertionLogSummary;
 }
 
-type SortField = 'date' | 'medio' | 'originalTitle' | 'insertions' | 'duration' | 'confidence';
+type SortField = 'date' | 'medio' | 'originalTitle' | 'timeRange' | 'insertions' | 'duration' | 'confidence';
 type SortDirection = 'asc' | 'desc';
 
 export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
@@ -36,7 +36,8 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                 row.medio.toLowerCase().includes(term) ||
                 row.originalTitle.toLowerCase().includes(term) ||
                 row.genre.toLowerCase().includes(term) ||
-                row.franja.toLowerCase().includes(term)
+                row.franja.toLowerCase().includes(term) ||
+                (row.timeRange || '').toLowerCase().includes(term)
             );
         }
 
@@ -52,6 +53,9 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
 
                 case 'originalTitle':
                     comparison = a.originalTitle.localeCompare(b.originalTitle);
+                    break;
+                case 'timeRange':
+                    comparison = (a.timeRange || '').localeCompare(b.timeRange || '');
                     break;
                 case 'insertions':
                     comparison = a.insertions - b.insertions;
@@ -77,11 +81,11 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
     };
 
     const exportToCSV = () => {
-        const headers = ['Date', 'Medio', 'Original Title', 'Genre', 'Franja', 'Duration', 'Insertions'];
+        const headers = ['Date', 'Medio', 'Original Title', 'Genre', 'Franja', 'Segmento', 'Duration', 'Insertions'];
         const csvContent = [
             headers.join(','),
             ...filteredAndSortedData.map(row =>
-                [row.date, `"${row.medio}"`, `"${row.originalTitle}"`, `"${row.genre}"`, `"${row.franja}"`, row.duration, row.insertions].join(',')
+                [row.date, `"${row.medio}"`, `"${row.originalTitle}"`, `"${row.genre}"`, `"${row.franja}"`, `"${row.timeRange}"`, row.duration, row.insertions].join(',')
             )
         ].join('\n');
 
@@ -210,6 +214,7 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                                 <SortableHeader field="originalTitle">Original Title</SortableHeader>
                                 <TableHead>Genre</TableHead>
                                 <TableHead>Franja</TableHead>
+                                <SortableHeader field="timeRange">Segmento</SortableHeader>
                                 <SortableHeader field="duration">Duration</SortableHeader>
                                 <SortableHeader field="insertions">Insertions</SortableHeader>
                                 <SortableHeader field="confidence">AI Confidence</SortableHeader>
@@ -228,6 +233,7 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
                                         <TableCell className="max-w-[200px] truncate">{row.originalTitle}</TableCell>
                                         <TableCell className="text-muted-foreground text-sm">{row.genre}</TableCell>
                                         <TableCell className="text-muted-foreground text-sm">{row.franja}</TableCell>
+                                        <TableCell className="font-mono text-sm">{row.timeRange || 'N/A'}</TableCell>
                                         <TableCell>{row.duration}s</TableCell>
                                         <TableCell className="font-semibold">{row.insertions}</TableCell>
                                         <TableCell>

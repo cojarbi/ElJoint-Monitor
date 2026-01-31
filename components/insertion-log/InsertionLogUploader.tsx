@@ -5,6 +5,7 @@ import { Upload, FileSpreadsheet, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAiModel } from '@/hooks/use-ai-settings';
 import { useAliasMappings } from '@/hooks/use-alias-mappings';
+import { useFranjaMappings } from '@/hooks/use-franja-mappings';
 
 interface InsertionLogUploaderProps {
     onUploadComplete: (data: InsertionLogRow[], summary: InsertionLogSummary, fileName: string) => void;
@@ -18,6 +19,7 @@ export interface InsertionLogRow {
     originalTitle: string;
     genre: string;
     franja: string;
+    timeRange: string;
     duration: number;
     insertions: number;
     confidence: number;
@@ -38,6 +40,7 @@ export interface InsertionLogSummary {
 export function InsertionLogUploader({ onUploadComplete, onUploadError }: InsertionLogUploaderProps) {
     const { model, enableFallback } = useAiModel();
     const { getMappingObject } = useAliasMappings();
+    const { mappings: franjaMappings } = useFranjaMappings();
     const [isDragging, setIsDragging] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -66,6 +69,7 @@ export function InsertionLogUploader({ onUploadComplete, onUploadError }: Insert
             formData.append('modelName', model);
             formData.append('enableFallback', String(enableFallback));
             formData.append('medioAliases', JSON.stringify(getMappingObject('medios')));
+            formData.append('franjaMappings', JSON.stringify(franjaMappings));
 
             const response = await fetch('/api/parse-insertion-log', {
                 method: 'POST',
@@ -85,7 +89,7 @@ export function InsertionLogUploader({ onUploadComplete, onUploadError }: Insert
         } finally {
             setIsLoading(false);
         }
-    }, [onUploadComplete, onUploadError]);
+    }, [onUploadComplete, onUploadError, model, enableFallback, getMappingObject, franjaMappings]);
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();

@@ -3,6 +3,7 @@ import { getUsers } from "@/app/actions/user"
 import { UsersClient } from "./users-client"
 import { AiSettingsCard } from "@/components/settings/ai-settings-card"
 import { AliasMappingsCard } from "@/components/settings/alias-mappings-card"
+import { FranjaMappingsCard } from "@/components/settings/franja-mappings-card"
 
 export default async function SettingsPage() {
     const users = await getUsers()
@@ -27,6 +28,7 @@ export default async function SettingsPage() {
                 </TabsContent>
                 <TabsContent value="mappings" className="space-y-4">
                     <AliasMappingsCard />
+                    <FranjaMappingsCard />
                 </TabsContent>
                 <TabsContent value="billing" className="space-y-4">
                     <div className="h-[200px] flex items-center justify-center border rounded-md">Billing Settings (Coming Soon)</div>

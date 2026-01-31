@@ -11,51 +11,18 @@ interface InsertionLogRow {
     franja: string;
     duration: number;
     insertions: number;
+    timeRange: string;
     confidence: number; // Added confidence field
 }
 
-// Existing fallback logic
-function mapToProgramFallback(genre: string, franja: string): string {
-    const g = genre?.toUpperCase().trim() || '';
-    const f = franja?.toUpperCase().trim() || '';
-
-    // NOVELAS mapping
-    if (g === 'NOVELAS' || g === 'DRAMATIZADOS') {
-        if (f === 'NOCTURNO') return 'Novela Estelar';
-        if (f === 'TARDE') return 'Novela Vespertina';
-        if (f === 'MANANA') return 'Novela Matutina';
-        return 'Novela';
-    }
-
-    // NOTICIAS mapping
-    if (g === 'NOTICIAS') {
-        if (f === 'MANANA') return 'Noticiero Matutino';
-        if (f === 'NOCTURNO') return 'Noticiero Estelar';
-        if (f === 'TARDE') return 'Noticiero Vespertino';
-        return 'Noticiero';
-    }
-
-    // VARIEDADES mapping
-    if (g === 'VARIEDADES') {
-        if (f === 'MANANA') return 'Variedades Mañana';
-        if (f === 'TARDE') return 'Tarde Vespertina';
-        if (f === 'NOCTURNO') return 'Variedades Nocturno';
-        return 'Variedades';
-    }
-
-    // DEPORTES mapping
-    if (g === 'DEPORTES') {
-        return 'Deportes';
-    }
-
-    // JUEGOS DE AZAR
-    if (g.includes('JUEGOS') || g.includes('AZAR') || g.includes('LOTERIA')) {
-        return 'Loteria';
-    }
-
-    // Default: use genre as-is
-    return genre || 'Sin Categoría';
+interface FranjaMapping {
+    label: string;
+    startTime: string;
+    endTime: string;
 }
+
+// Existing fallback logic
+
 
 // Parse date from YYYYMMDD format
 function parseDate(dateVal: string | number): string {
@@ -174,6 +141,15 @@ export async function POST(request: NextRequest) {
             console.warn("Failed to parse aliases", e);
         }
 
+        const franjaMappingsRaw = (formData.get('franjaMappings') as string) || '[]';
+        let franjaMappings: FranjaMapping[] = [];
+        try {
+            franjaMappings = JSON.parse(franjaMappingsRaw);
+            console.log(`Received ${franjaMappings.length} franja mappings:`, franjaMappings);
+        } catch (e) {
+            console.warn("Failed to parse franja mappings", e);
+        }
+
         // Helper to normalize and apply alias
         const applyAlias = (value: string, aliases: Record<string, string>) => {
             if (!value) return value;
@@ -220,42 +196,13 @@ export async function POST(request: NextRequest) {
             });
         }
 
-        // 3. AI Categorization for Distinct Programs with Stable IDs
-        let programMappings: Record<string, { category: string, confidence: number }> = {};
-        try {
-            const uniqueProgramsList = Array.from(uniqueProgramsMap.entries());
-            console.log(`Categorizing ${uniqueProgramsList.length} unique programs with AI...`);
-
-            // Generate stable IDs for programs
-            const programsWithIds: ProgramInput[] = uniqueProgramsList.slice(0, 100).map(([key, prog], index) => ({
-                id: `p${index}`,
-                title: prog.title,
-                genre: prog.genre,
-                franja: prog.franja
-            }));
-
-            // Create mapping from ID back to original key
-            const idToKeyMap = new Map<string, string>();
-            uniqueProgramsList.slice(0, 100).forEach(([key], index) => {
-                idToKeyMap.set(`p${index}`, key);
-            });
-
-            const aiMappings: ProgramCategory[] = await categorizeProgramsAI(programsWithIds, modelName);
-
-            // Map results back using IDs (guaranteed unique)
-            aiMappings.forEach(m => {
-                const originalKey = idToKeyMap.get(m.id);
-                if (originalKey) {
-                    programMappings[originalKey] = {
-                        category: m.mappedCategory,
-                        confidence: m.confidence || 90
-                    };
-                }
-            });
-
-        } catch (err) {
-            console.warn("AI Categorization failed, using full fallback", err);
-        }
+        // Helper to get time range from Franja
+        const getTimeRange = (franja: string): string => {
+            if (!franja) return 'N/A';
+            const normalizedFranja = franja.trim().toLowerCase();
+            const mapping = franjaMappings.find(m => m.label.toLowerCase() === normalizedFranja);
+            return mapping ? `${mapping.startTime} - ${mapping.endTime}` : 'N/A';
+        };
 
         // 4. Build Final Results
         const results: InsertionLogRow[] = [];
@@ -263,24 +210,11 @@ export async function POST(request: NextRequest) {
         for (const item of rawResults) {
             const { row, vehiculo, genero, franja, soporte, progKey } = item;
 
-            // Determine Category & Confidence
-            let mappedProgram = '';
-            let confidence = 0;
-
-            if (programMappings[progKey]) {
-                // AI Hit
-                mappedProgram = programMappings[progKey].category;
-                confidence = programMappings[progKey].confidence;
-            } else if (enableFallback) {
-                // Fallback Hit
-                mappedProgram = mapToProgramFallback(genero, franja);
-                if (mappedProgram === 'Sin Categoría') confidence = 0;
-                else confidence = 85;
-            } else {
-                // No AI match and Fallback disabled
-                mappedProgram = 'Sin Categoría';
-                confidence = 0;
-            }
+            // Determine Category & Confidence & Time Range
+            const mappedProgram = 'Sin Categoría'; // Deprecated
+            const timeRange = getTimeRange(franja);
+            // Default confidence to 100 since we trust the raw data and static mapping
+            const confidence = 100;
 
             const fecha = row[colMap.fecha];
             const duracion = Number(row[colMap.duracion]) || 0;
@@ -293,6 +227,7 @@ export async function POST(request: NextRequest) {
                 originalTitle: soporte,
                 genre: genero,
                 franja: franja,
+                timeRange,
                 duration: duracion,
                 insertions: insercion,
                 confidence
@@ -302,7 +237,7 @@ export async function POST(request: NextRequest) {
 
         // Group rows and sum assertions
         const groupedResults = results.reduce((acc, curr) => {
-            const key = `${curr.date}|${curr.medio}|${curr.mappedProgram}|${curr.originalTitle}|${curr.genre}|${curr.franja}|${curr.duration}`;
+            const key = `${curr.date}|${curr.medio}|${curr.mappedProgram}|${curr.originalTitle}|${curr.genre}|${curr.franja}|${curr.timeRange}|${curr.duration}`;
 
             if (!acc[key]) {
                 acc[key] = { ...curr };
