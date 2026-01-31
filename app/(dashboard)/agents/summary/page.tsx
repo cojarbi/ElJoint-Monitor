@@ -45,7 +45,7 @@ interface StoredSummaryState {
     insertionFileName?: string;
 }
 
-type SortField = 'date' | 'medio' | 'program' | 'originalTitle' | 'durationSeconds' | 'orderedQuantity' | 'totalInserted' | 'reconciliationConfidence';
+type SortField = 'date' | 'medio' | 'program' | 'schedule' | 'originalTitle' | 'durationSeconds' | 'orderedQuantity' | 'totalInserted' | 'diff' | 'reconciliationConfidence';
 type SortDirection = 'asc' | 'desc';
 
 export default function SummaryPage() {
@@ -101,6 +101,37 @@ export default function SummaryPage() {
 
 
 
+    // Helper to parse "HH:MM - HH:MM" or "HH:MM-HH:MM"
+    // Returns { start: minutes, end: minutes } or null
+    const parseTimeRange = (timeStr: string | undefined): { start: number, end: number } | null => {
+        if (!timeStr) return null;
+        const normalized = timeStr.toLowerCase().replace(/\s+/g, '');
+        // Matches "6:00am-8:00am", "18:00-20:00", "06:00-11:30"
+        const match = normalized.match(/(\d{1,2}:\d{2})(?:[a-z]{2})?-(\d{1,2}:\d{2})(?:[a-z]{2})?/);
+        if (!match) return null;
+
+        const parseMinutes = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        return { start: parseMinutes(match[1]), end: parseMinutes(match[2]) };
+    };
+
+    // Check if range1 (budget) overlaps with range2 (insertion)
+    const checkOverlap = (sched: string | undefined, actual: string | undefined): boolean => {
+        if (!sched || !actual) return true; // Lazy match if either is missing, though unlikely for insertion
+
+        const s = parseTimeRange(sched); // Budget schedule
+        const a = parseTimeRange(actual); // Insertion timeRange
+
+        if (!s || !a) return true; // Fallback to permissive if parsing fails
+
+        // Standard overlap: StartA < EndB && EndA > StartB
+        return s.start < a.end && s.end > a.start;
+    };
+
+
     const reconcileData = async () => {
         if (!budgetData?.data || !insertionData?.data) return;
 
@@ -112,29 +143,19 @@ export default function SummaryPage() {
             const budgetRows = budgetData.data;
             const insertionRows = insertionData.data;
 
-            // 1. Prepare lists for AI
-            const budgetPrograms = Array.from(new Set(budgetRows.map(r => r.program)));
-            const insertionPrograms = Array.from(new Set(insertionRows.map(r => r.mappedProgram)));
+            // 1. Prepare lists for AI (Only Medios now)
             const budgetMedios = Array.from(new Set(budgetRows.map(r => r.medio).filter(Boolean)));
             const insertionMedios = Array.from(new Set(insertionRows.map(r => r.medio).filter(Boolean)));
 
-            // 2. Call AI API
-            let programMap: Record<string, string | null> = {};
+            // 2. Call AI API for Medio Mapping only
             let medioMap: Record<string, string | null> = {};
-            setStatusMessage('AI Analyzing & Mapping...');
+            setStatusMessage('Mapping Channels...');
 
-            // ... inside reconcileData
-
-            // ... inside reconcileData
-
-            // ...
             try {
                 const response = await fetch('/api/reconcile-data', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        budgetPrograms,
-                        insertionPrograms,
                         budgetMedios,
                         insertionMedios,
                         modelName: model,
@@ -143,16 +164,13 @@ export default function SummaryPage() {
                 });
                 const result = await response.json();
 
-                if (result.programMapping) programMap = result.programMapping;
-                else if (result.mapping) programMap = result.mapping; // Fallback
-
                 if (result.medioMapping) medioMap = result.medioMapping;
             } catch (error) {
                 console.error("AI Reconciliation API failed, falling back to direct match", error);
             }
 
-            // 3. Reconcile
-            setStatusMessage('Finalizing Reconciliation...');
+            // 3. Reconcile - New Logic (Date -> Medio -> Duration -> Time)
+            setStatusMessage('Reconciling Matches...');
 
             // Optimization: Index insertion rows by Date to avoid full scan per budget row
             const insertionByDate: Record<string, InsertionLogRow[]> = {};
@@ -162,12 +180,11 @@ export default function SummaryPage() {
             });
 
             const reconciled = budgetRows.map((budgetRow, idx) => {
-                // Get potential matches by date (O(1) lookup)
+                // Get potential matches by date (CRITERIA 1: DATE)
                 const candidateMatches = insertionByDate[budgetRow.date] || [];
 
                 const matches = candidateMatches.filter((log) => {
-                    // Medio Check:
-                    // Normalize once (or ideally pre-normalize data, but this is fast enough for reduced set)
+                    // CRITERIA 2: MEDIO Check
                     const budgetMedioLower = budgetRow.medio?.toLowerCase();
                     const directMedioMatch = log.medio?.toLowerCase() === budgetMedioLower;
                     const mappedMedio = medioMap[log.medio];
@@ -176,14 +193,13 @@ export default function SummaryPage() {
 
                     if (!medioMatch) return false;
 
-                    // Program Check:
-                    const budgetProgramLower = budgetRow.program?.toLowerCase();
-                    const directMatch = log.mappedProgram?.toLowerCase() === budgetProgramLower;
-                    const mappedBudgetProgram = programMap[log.mappedProgram];
-                    const aiMatch = mappedBudgetProgram && mappedBudgetProgram.toLowerCase() === budgetProgramLower;
-                    const programMatch = directMatch || aiMatch;
+                    // CRITERIA 3: DURATION Check
+                    // Allow small variance? Ideally exact, let's say strict for now.
+                    if (budgetRow.durationSeconds !== log.duration) return false;
 
-                    if (!programMatch) return false;
+                    // CRITERIA 4: TIME/SEGMENT Check
+                    const timeMatch = checkOverlap(budgetRow.schedule, log.timeRange);
+                    if (!timeMatch) return false;
 
                     return true;
                 });
@@ -266,6 +282,9 @@ export default function SummaryPage() {
                 case 'program':
                     comparison = a.program.localeCompare(b.program);
                     break;
+                case 'schedule':
+                    comparison = (a.schedule || '').localeCompare(b.schedule || '');
+                    break;
                 case 'originalTitle':
                     comparison = a.originalTitle.localeCompare(b.originalTitle);
                     break;
@@ -277,6 +296,11 @@ export default function SummaryPage() {
                     break;
                 case 'totalInserted':
                     comparison = a.totalInserted - b.totalInserted;
+                    break;
+                case 'diff':
+                    const diffA = (a.totalInserted || 0) - a.orderedQuantity;
+                    const diffB = (b.totalInserted || 0) - b.orderedQuantity;
+                    comparison = diffA - diffB;
                     break;
                 case 'reconciliationConfidence':
                     comparison = a.reconciliationConfidence - b.reconciliationConfidence;
@@ -317,7 +341,7 @@ export default function SummaryPage() {
     const exportToCSV = () => {
         if (!reconciledData) return;
 
-        const headers = ['Date', 'Medio', 'Program', 'Original Title', 'Duration', 'Ordered Qty', 'Insertion', 'Confidence'];
+        const headers = ['Date', 'Medio', 'Program', 'Schedule', 'Original Title', 'Duration', 'Ordered Qty', 'Insertion', 'Diff', 'Confidence'];
         const csvContent = [
             headers.join(','),
             ...filteredAndSortedData.map(row =>
@@ -325,10 +349,12 @@ export default function SummaryPage() {
                     row.date,
                     `"${row.medio}"`,
                     `"${row.program}"`,
+                    `"${row.schedule || ''}"`,
                     `"${row.originalTitle}"`,
                     row.durationSeconds || 0,
                     row.orderedQuantity,
                     row.totalInserted,
+                    (row.totalInserted || 0) - row.orderedQuantity,
                     row.reconciliationConfidence,
                 ].join(',')
             )
@@ -503,10 +529,12 @@ export default function SummaryPage() {
                                         <SortableHeader field="date">Date</SortableHeader>
                                         <SortableHeader field="medio">Medio</SortableHeader>
                                         <SortableHeader field="program">Program</SortableHeader>
+                                        <SortableHeader field="schedule">Schedule</SortableHeader>
                                         <SortableHeader field="originalTitle">Original Title</SortableHeader>
                                         <SortableHeader field="durationSeconds" center>Duration</SortableHeader>
                                         <SortableHeader field="orderedQuantity" center>Ordered Qty</SortableHeader>
                                         <SortableHeader field="totalInserted" center>Insertion</SortableHeader>
+                                        <SortableHeader field="diff" center>Diff</SortableHeader>
                                         <SortableHeader field="reconciliationConfidence" center>Confidence</SortableHeader>
                                     </TableRow>
                                 </TableHeader>
@@ -522,6 +550,9 @@ export default function SummaryPage() {
                                             <TableCell className="text-xs">
                                                 {row.program}
                                             </TableCell>
+                                            <TableCell className="text-xs text-muted-foreground">
+                                                {row.schedule || '-'}
+                                            </TableCell>
                                             <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={row.originalTitle}>
                                                 {row.originalTitle}
                                             </TableCell>
@@ -535,6 +566,9 @@ export default function SummaryPage() {
                                                 <span className={`font-medium ${row.status === 'missing' ? 'text-red-500' : row.status === 'over' ? 'text-blue-500' : row.status === 'under' ? 'text-orange-500' : 'text-green-600'}`}>
                                                     {row.totalInserted}
                                                 </span>
+                                            </TableCell>
+                                            <TableCell className={`text-center font-bold ${(row.totalInserted - row.orderedQuantity) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                {row.totalInserted - row.orderedQuantity}
                                             </TableCell>
                                             <TableCell className="text-center">
                                                 {row.reconciliationConfidence > 0 ? (

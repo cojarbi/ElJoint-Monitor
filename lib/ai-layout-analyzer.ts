@@ -9,6 +9,7 @@ export interface SheetBlock {
     month: number;
     year: number;
     headerRowIndex: number;  // The row containing 1, 2, 3...
+    headerColIndex?: number; // The column index where the month header starts
     dataStartRowIndex: number; // First row of program data
     confidence: number;
 }
@@ -21,6 +22,7 @@ const sheetBlockSchema: AIResponseSchema = {
             month: (v) => typeof v === 'number' && v >= 1 && v <= 12,
             year: (v) => typeof v === 'number' && v >= 2000 && v <= 2100,
             headerRowIndex: (v) => typeof v === 'number' && v >= 0,
+            headerColIndex: (v) => typeof v === 'undefined' || (typeof v === 'number' && v >= 0),
             dataStartRowIndex: (v) => typeof v === 'number' && v >= 0,
             confidence: (v) => typeof v === 'number' && v >= 0 && v <= 100,
         }
@@ -37,14 +39,15 @@ export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.Work
         // 1. Convert sheet to a simplified CSV/Text representation for the LLM
         // We only need the first ~150 rows usually, or we can chunk it if it's huge.
         // For efficiency, let's take columns A-Z (0-25) and rows 0-3000.
+        // Wait, for horizontal layouts we might need more columns! Increasing to 50 columns (AX).
         const rows: string[] = [];
-        const range = XLSX.utils.decode_range(sheetData['!ref'] || 'A1:Z3000');
-        const maxRow = Math.min(range.e.r, 3000); // Increased limit to 3000 rows to handle multi-table files
+        const range = XLSX.utils.decode_range(sheetData['!ref'] || 'A1:AX3000');
+        const maxRow = Math.min(range.e.r, 3000);
 
         for (let r = 0; r <= maxRow; r++) {
             const rowCells: string[] = [];
             let hasContent = false;
-            for (let c = 0; c <= 25; c++) { // First 26 columns
+            for (let c = 0; c <= 50; c++) { // First 50 columns
                 const cell = sheetData[XLSX.utils.encode_cell({ r, c })];
                 const val = cell ? String(cell.v).trim().replace(/,/g, ' ') : '';
                 rowCells.push(val);
@@ -60,10 +63,11 @@ export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.Work
 
         const prompt = `
         You are an expert data analyst parsing a TV Media Budget Excel file.
-        I will provide a text representation of the first ${maxRow} rows of a sheet named "${sheetName}".
+        I will provide a text representation of the first ${maxRow} rows (and 50 columns) of a sheet named "${sheetName}".
         
         Your task is to identify "Budget Blocks". A block consists of:
         1. A Month/Year Header (e.g., "Noviembre 2025", "Dic 2024", "Oct-25"). It might be anywhere in the few rows above the grid.
+           - CRITICAL: If you find a Month header without a Year (e.g. "November"), assume it belongs to the same Year as the closest previous block (to the left or above). Always populate the 'year' field in the output, inferring it if necessary.
         2. A Day Grid Header Row: A row containing a sequence of numbers 1, 2, 3... representing days of the month.
         3. Data Rows: Rows following the header that contain program names (Col A usually) and quantities under the day columns.
         
@@ -74,6 +78,7 @@ export async function analyzeSheetLayout(sheetName: string, sheetData: XLSX.Work
             "month": <number 1-12>,
             "year": <number 4 digits>,
             "headerRowIndex": <number>, (the row index containing 1, 2, 3...)
+            "headerColIndex": <number>, (the column index roughly where the Month Header is found. Use 0 if unsure, but try to identify if multiple blocks share a row),
             "dataStartRowIndex": <number> (the first row containing actual program data after the header),
             "confidence": <number 0-100>
           }

@@ -235,20 +235,8 @@ export async function POST(request: NextRequest) {
         }
 
 
-        // Group rows and sum assertions
-        const groupedResults = results.reduce((acc, curr) => {
-            const key = `${curr.date}|${curr.medio}|${curr.mappedProgram}|${curr.originalTitle}|${curr.genre}|${curr.franja}|${curr.timeRange}|${curr.duration}`;
-
-            if (!acc[key]) {
-                acc[key] = { ...curr };
-            } else {
-                acc[key].insertions += curr.insertions;
-                // Average confidence weighted? Or just keep first? Keep first is fine for now.
-            }
-            return acc;
-        }, {} as Record<string, InsertionLogRow>);
-
-        const finalResults = Object.values(groupedResults);
+        // No grouping - return all rows
+        const finalResults = results;
 
         // Sort by date, medio, mapped program
         finalResults.sort((a, b) => {

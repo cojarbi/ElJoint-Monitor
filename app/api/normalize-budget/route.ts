@@ -13,7 +13,8 @@ interface NormalizedRow {
 }
 
 // Helper to find month/year in a specific row
-function findMonthYearInRow(sheet: XLSX.WorkSheet, rowIndex: number): { month: number; year: number } | null {
+// Helper to find month/year in a specific row - returns ALL occurances
+function findMonthYearsInRow(sheet: XLSX.WorkSheet, rowIndex: number): Array<{ month: number; year: number; colIndex: number }> {
     const monthMap: Record<string, number> = {
         'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
         'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
@@ -23,8 +24,10 @@ function findMonthYearInRow(sheet: XLSX.WorkSheet, rowIndex: number): { month: n
         'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12
     };
 
-    // Check first 20 columns
-    for (let col = 0; col < 20; col++) {
+    const results: Array<{ month: number; year: number; colIndex: number }> = [];
+
+    // Check up to 100 columns for horizontal layouts
+    for (let col = 0; col < 100; col++) {
         const cell = sheet[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
         if (cell && typeof cell.v === 'string') {
             const text = cell.v.toLowerCase().trim();
@@ -40,16 +43,25 @@ function findMonthYearInRow(sheet: XLSX.WorkSheet, rowIndex: number): { month: n
 
                 for (const [name, num] of Object.entries(monthMap)) {
                     if (monthStr.startsWith(name) || name.startsWith(monthStr)) {
-                        return { month: num, year };
+                        results.push({ month: num, year, colIndex: col });
+                        break;
+                    }
+                }
+            } else {
+                // Check for just month name if year might be in context
+                for (const [name, num] of Object.entries(monthMap)) {
+                    const cleanedText = text.replace(/[^a-z]/g, '');
+                    if (cleanedText === name || cleanedText.startsWith(name)) {
+                        results.push({ month: num, year: 0, colIndex: col }); // 0 indicates year needs to be inferred
+                        break;
                     }
                 }
             }
-
-            // Check for just month name if year might be in context (less reliable, sticking to month+year for now)
         }
     }
-    return null;
+    return results;
 }
+
 
 // Helper to find day columns in a specific row
 function findDayGridInRow(sheet: XLSX.WorkSheet, rowIndex: number): Map<number, number> | null {
@@ -167,7 +179,7 @@ function normalizeBudgetSheet(
 
     // Process using AI Blocks
     for (const block of sortedBlocks) {
-        const { month, year, headerRowIndex, dataStartRowIndex, confidence: blockConfidence } = block;
+        const { month, year, headerRowIndex, headerColIndex = 0, dataStartRowIndex, confidence: blockConfidence } = block;
 
         // Find the Day Map for this specific block's header row
         const dayMap = findDayGridInRow(sheetData, headerRowIndex);
@@ -176,9 +188,14 @@ function normalizeBudgetSheet(
             continue;
         }
 
-        // Determine end row for this block (until next block or end of sheet)
-        const nextBlock = sortedBlocks.find(b => b.headerRowIndex > headerRowIndex);
-        const endRow = nextBlock ? nextBlock.headerRowIndex - 1 : range.e.r;
+        // Determine scope for this block
+        // Find next block on the same row to set scope end
+        const nextBlockOnRow = sortedBlocks.find(b => b.headerRowIndex === headerRowIndex && (b.headerColIndex || 0) > headerColIndex);
+        const nextBlockBelow = sortedBlocks.find(b => b.headerRowIndex > headerRowIndex);
+
+        const endRow = nextBlockBelow ? nextBlockBelow.headerRowIndex - 1 : range.e.r;
+        const startCol = headerColIndex;
+        const endCol = nextBlockOnRow ? (nextBlockOnRow.headerColIndex || 1000) - 1 : 16384; // XLS max cols
 
         // Try to find Schedule/Horario column using improved detection
         let scheduleCol = detectScheduleColumn(sheetData, headerRowIndex, dataStartRowIndex);
@@ -189,7 +206,7 @@ function normalizeBudgetSheet(
             scheduleCol = 1;
         }
 
-        console.log(`Processing Block: ${month}/${year} | Rows ${dataStartRowIndex}-${endRow} | Schedule Col: ${scheduleCol}`);
+        console.log(`Processing Block: ${month}/${year} | Rows ${dataStartRowIndex}-${endRow} | Cols ${startCol}-${endCol} | Schedule Col: ${scheduleCol}`);
 
         for (let rowIndex = dataStartRowIndex; rowIndex <= endRow; rowIndex++) {
             const programCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })];
@@ -217,8 +234,10 @@ function normalizeBudgetSheet(
                 }
             }
 
-            // Extract Quantities using the dayMap for THIS block
+            // Extract Quantities using the dayMap for THIS block, constrained to block columns
             for (const [col, day] of dayMap.entries()) {
+                if (col < startCol || col > endCol) continue; // Skip columns outside of block scope
+
                 const qtyCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
                 if (qtyCell && typeof qtyCell.v === 'number' && qtyCell.v > 0) {
                     // Create date
@@ -249,15 +268,28 @@ function normalizeBudgetSheetDynamic(
     const results: NormalizedRow[] = [];
     const range = XLSX.utils.decode_range(sheetData['!ref'] || 'A1:A1');
 
-    let currentMonthYear: { month: number; year: number } | null = null;
+    let currentBlockSet: Array<{ month: number; year: number; colIndex: number }> = [];
     let currentDayMap: Map<number, number> | null = null;
     let scheduleCol = -1;
+    let lastSeenYear = new Date().getFullYear(); // Keep track of last valid year
 
     for (let rowIndex = range.s.r; rowIndex <= range.e.r; rowIndex++) {
-        // 1. Try to find Month/Year Header
-        const monthYear = findMonthYearInRow(sheetData, rowIndex);
-        if (monthYear) {
-            currentMonthYear = monthYear;
+        // 1. Try to find Month/Year Headers (multiple allowed)
+        const monthYears = findMonthYearsInRow(sheetData, rowIndex);
+        if (monthYears.length > 0) {
+            // Resolve years for all found blocks
+            currentBlockSet = monthYears.map(m => {
+                if (m.year > 0) {
+                    lastSeenYear = m.year;
+                    return m;
+                } else {
+                    return { ...m, year: lastSeenYear };
+                }
+            });
+            // Sort by colIndex to process left-to-right
+            currentBlockSet.sort((a, b) => a.colIndex - b.colIndex);
+
+            console.log(`Dynamic Parser found month headers at Row ${rowIndex}:`, currentBlockSet);
             currentDayMap = null; // Reset grid when new month is found
             continue;
         }
@@ -272,8 +304,9 @@ function normalizeBudgetSheetDynamic(
             continue;
         }
 
-        // 3. Process Data Rows (only if we have both context bits)
-        if (currentMonthYear && currentDayMap) {
+
+        // 3. Process Data Rows (only if we have current blocks and day map)
+        if (currentBlockSet.length > 0 && currentDayMap) {
             const programCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: 0 })];
             const program = programCell?.v?.toString().trim();
 
@@ -300,13 +333,29 @@ function normalizeBudgetSheetDynamic(
                 }
             }
 
-            // Extract Quantities
-            let hasData = false;
+            // Extract Quantities - with column scope check
+
+            // Loop through all days found on this row
             for (const [col, day] of currentDayMap.entries()) {
+
+                // Determine which block this column belongs to
+                // Find the latest block that starts ON or BEFORE this column
+                let matchingBlock = null;
+                for (const block of currentBlockSet) {
+                    if (col >= block.colIndex) {
+                        matchingBlock = block;
+                    } else {
+                        break; // Since we sorted by colIndex, we can stop
+                    }
+                }
+
+                // If column is to the left of the first block, ignore (shouldnt happen if dayMap is good)
+                if (!matchingBlock) continue;
+
                 const qtyCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: col })];
                 if (qtyCell && typeof qtyCell.v === 'number' && qtyCell.v > 0) {
-                    // Create date
-                    const date = new Date(currentMonthYear.year, currentMonthYear.month - 1, day);
+                    // Create date using matching block's Month/Year
+                    const date = new Date(matchingBlock.year, matchingBlock.month - 1, day);
                     const dateStr = date.toISOString().split('T')[0];
 
                     results.push({
@@ -318,7 +367,6 @@ function normalizeBudgetSheetDynamic(
                         schedule,
                         confidence: 85 // Fallback logic confidence
                     });
-                    hasData = true;
                 }
             }
         }
