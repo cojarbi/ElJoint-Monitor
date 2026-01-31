@@ -27,6 +27,17 @@ interface ReconciledRow extends NormalizedRow {
     status: 'matched' | 'under' | 'over' | 'missing';
 }
 
+interface OverflowRow {
+    date: string;
+    medio: string;
+    originalTitle: string;
+    franja: string;
+    timeRange: string;
+    duration: number;
+    insertions: number;
+    reason: 'Exceeded Order Qty' | 'No Matching Budget' | 'Parse Error (Budget)' | 'Parse Error (Insertion)';
+}
+
 interface StoredBudgetData {
     data: NormalizedRow[];
     fileName?: string;
@@ -41,11 +52,12 @@ interface StoredInsertionData {
 // Interface for persisting the summary state
 interface StoredSummaryState {
     reconciledData: ReconciledRow[];
+    overflowData: OverflowRow[];
     budgetFileName?: string;
     insertionFileName?: string;
 }
 
-type SortField = 'date' | 'medio' | 'program' | 'schedule' | 'originalTitle' | 'durationSeconds' | 'orderedQuantity' | 'totalInserted' | 'diff' | 'reconciliationConfidence';
+type SortField = 'date' | 'medio' | 'program' | 'schedule' | 'originalTitle' | 'durationSeconds' | 'orderedQuantity' | 'totalInserted' | 'reconciliationConfidence';
 type SortDirection = 'asc' | 'desc';
 
 export default function SummaryPage() {
@@ -54,6 +66,7 @@ export default function SummaryPage() {
     const [budgetData, setBudgetData] = useState<StoredBudgetData | null>(null);
     const [insertionData, setInsertionData] = useState<StoredInsertionData | null>(null);
     const [reconciledData, setReconciledData] = useState<ReconciledRow[] | null>(null);
+    const [overflowData, setOverflowData] = useState<OverflowRow[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [sortField, setSortField] = useState<SortField>('date');
@@ -88,6 +101,7 @@ export default function SummaryPage() {
 
                 if (budgetMatch && insertionMatch) {
                     setReconciledData(parsedSummary.reconciledData);
+                    setOverflowData(parsedSummary.overflowData || []);
                 } else {
                     localStorage.removeItem('summary_reconciliation_data');
                 }
@@ -98,8 +112,6 @@ export default function SummaryPage() {
     }, []);
 
     const [statusMessage, setStatusMessage] = useState('Processing...');
-
-
 
     // Helper to parse "HH:MM - HH:MM" or "HH:MM-HH:MM"
     // Returns { start: minutes, end: minutes } or null
@@ -118,17 +130,20 @@ export default function SummaryPage() {
         return { start: parseMinutes(match[1]), end: parseMinutes(match[2]) };
     };
 
-    // Check if range1 (budget) overlaps with range2 (insertion)
-    const checkOverlap = (sched: string | undefined, actual: string | undefined): boolean => {
-        if (!sched || !actual) return true; // Lazy match if either is missing, though unlikely for insertion
+    // Check if Budget schedule fits INSIDE Insertion time range
+    // Returns: 'match' | 'no_match' | 'parse_error_budget' | 'parse_error_insertion'
+    const checkContainment = (budgetSched: string | undefined, insertionTime: string | undefined): 'match' | 'no_match' | 'parse_error_budget' | 'parse_error_insertion' => {
+        const b = parseTimeRange(budgetSched);
+        const i = parseTimeRange(insertionTime);
 
-        const s = parseTimeRange(sched); // Budget schedule
-        const a = parseTimeRange(actual); // Insertion timeRange
+        if (!b) return 'parse_error_budget';
+        if (!i) return 'parse_error_insertion';
 
-        if (!s || !a) return true; // Fallback to permissive if parsing fails
-
-        // Standard overlap: StartA < EndB && EndA > StartB
-        return s.start < a.end && s.end > a.start;
+        // Budget must be contained within Insertion: budgetStart >= insertionStart AND budgetEnd <= insertionEnd
+        if (b.start >= i.start && b.end <= i.end) {
+            return 'match';
+        }
+        return 'no_match';
     };
 
 
@@ -137,7 +152,8 @@ export default function SummaryPage() {
 
         setIsLoading(true);
         setStatusMessage('Preparing data...');
-        setReconciledData(null); // Clear current data
+        setReconciledData(null);
+        setOverflowData([]);
 
         try {
             const budgetRows = budgetData.data;
@@ -169,21 +185,38 @@ export default function SummaryPage() {
                 console.error("AI Reconciliation API failed, falling back to direct match", error);
             }
 
-            // 3. Reconcile - New Logic (Date -> Medio -> Duration -> Time)
+            // 3. Reconcile - New Logic with Resource Consumption
             setStatusMessage('Reconciling Matches...');
 
-            // Optimization: Index insertion rows by Date to avoid full scan per budget row
-            const insertionByDate: Record<string, InsertionLogRow[]> = {};
-            insertionRows.forEach(row => {
+            // Track remaining capacity for each budget row
+            const budgetCapacity: number[] = budgetRows.map(r => r.orderedQuantity);
+
+            // Track remaining quantity for each insertion row
+            const insertionRemaining: number[] = insertionRows.map(r => r.insertions);
+
+            // Track matching status for insertion rows
+            // null = unchecked/no-match-attempted, string = specific error, 'matched' = matched at least one
+            const insertionStatus: string[] = new Array(insertionRows.length).fill(null);
+
+            // Optimization: Index insertion rows by Date
+            const insertionByDate: Record<string, { row: InsertionLogRow, idx: number }[]> = {};
+            insertionRows.forEach((row, idx) => {
                 if (!insertionByDate[row.date]) insertionByDate[row.date] = [];
-                insertionByDate[row.date].push(row);
+                insertionByDate[row.date].push({ row, idx });
             });
 
-            const reconciled = budgetRows.map((budgetRow, idx) => {
-                // Get potential matches by date (CRITERIA 1: DATE)
+            const reconciled = budgetRows.map((budgetRow, budgetIdx) => {
                 const candidateMatches = insertionByDate[budgetRow.date] || [];
 
-                const matches = candidateMatches.filter((log) => {
+                let totalInserted = 0;
+                const matchedFranjas: string[] = [];
+                const matchedTitles: string[] = [];
+                let confidenceSum = 0;
+                let matchCount = 0;
+
+                for (const { row: log, idx: logIdx } of candidateMatches) {
+                    if (insertionRemaining[logIdx] <= 0) continue;
+
                     // CRITERIA 2: MEDIO Check
                     const budgetMedioLower = budgetRow.medio?.toLowerCase();
                     const directMedioMatch = log.medio?.toLowerCase() === budgetMedioLower;
@@ -191,27 +224,48 @@ export default function SummaryPage() {
                     const aiMedioMatch = mappedMedio && mappedMedio.toLowerCase() === budgetMedioLower;
                     const medioMatch = directMedioMatch || aiMedioMatch;
 
-                    if (!medioMatch) return false;
+                    if (!medioMatch) continue;
 
                     // CRITERIA 3: DURATION Check
-                    // Allow small variance? Ideally exact, let's say strict for now.
-                    if (budgetRow.durationSeconds !== log.duration) return false;
+                    if (budgetRow.durationSeconds !== log.duration) continue;
 
-                    // CRITERIA 4: TIME/SEGMENT Check
-                    const timeMatch = checkOverlap(budgetRow.schedule, log.timeRange);
-                    if (!timeMatch) return false;
+                    // CRITERIA 4: TIME CONTAINMENT Check
+                    const containmentResult = checkContainment(budgetRow.schedule, log.timeRange);
 
-                    return true;
-                });
+                    if (containmentResult !== 'match') {
+                        // Only record the error if it hasn't been matched successfully elsewhere
+                        // and we haven't already recorded a more specific error (optional)
+                        if (insertionStatus[logIdx] !== 'matched') {
+                            if (containmentResult === 'parse_error_budget') insertionStatus[logIdx] = 'Parse Error (Budget)';
+                            else if (containmentResult === 'parse_error_insertion') insertionStatus[logIdx] = 'Parse Error (Insertion)';
+                            // If 'no_match', we leave it null or set to 'No Matching Budget' at the end
+                        }
+                        continue;
+                    }
 
-                const totalInserted = matches.reduce((sum, row) => sum + row.insertions, 0);
-                const uniqueFranjas = Array.from(new Set(matches.map((m) => m.franja).filter(Boolean))).join(', ');
-                const uniqueTitles = Array.from(new Set(matches.map((m) => m.originalTitle).filter(Boolean))).join(', ');
+                    // Successfully matched
+                    insertionStatus[logIdx] = 'matched'; // Mark as having found a valid home
 
-                const avgConfidence = matches.length > 0
-                    ? matches.reduce((sum, row) => sum + (row.confidence || 0), 0) / matches.length
-                    : 0;
+                    const needed = budgetCapacity[budgetIdx];
+                    const available = insertionRemaining[logIdx];
+                    const toAllocate = Math.min(available, needed);
 
+                    if (toAllocate > 0) {
+                        totalInserted += toAllocate;
+                        budgetCapacity[budgetIdx] -= toAllocate;
+                        insertionRemaining[logIdx] -= toAllocate;
+
+                        if (log.franja) matchedFranjas.push(log.franja);
+                        if (log.originalTitle) matchedTitles.push(log.originalTitle);
+                        confidenceSum += (log.confidence || 0);
+                        matchCount++;
+                    }
+
+                    // Note: We don't push to overflow here anymore. 
+                    // We wait until we've checked ALL budget lines.
+                }
+
+                const avgConfidence = matchCount > 0 ? confidenceSum / matchCount : 0;
                 const difference = budgetRow.orderedQuantity - totalInserted;
 
                 let status: ReconciledRow['status'] = 'matched';
@@ -221,8 +275,8 @@ export default function SummaryPage() {
 
                 return {
                     ...budgetRow,
-                    franja: uniqueFranjas || '-',
-                    originalTitle: uniqueTitles || '-',
+                    franja: [...new Set(matchedFranjas)].join(', ') || '-',
+                    originalTitle: [...new Set(matchedTitles)].join(', ') || '-',
                     totalInserted,
                     difference,
                     reconciliationConfidence: Math.round(avgConfidence),
@@ -230,11 +284,48 @@ export default function SummaryPage() {
                 };
             });
 
+            // 4. Calculate Overflow / Unmatched
+            const overflow: OverflowRow[] = [];
+
+            insertionRows.forEach((log, idx) => {
+                const remaining = insertionRemaining[idx];
+
+                // If there are leftovers
+                if (remaining > 0) {
+                    let reason: OverflowRow['reason'] = 'No Matching Budget';
+
+                    if (insertionStatus[idx] === 'matched') {
+                        reason = 'Exceeded Order Qty';
+                    } else if (insertionStatus[idx] && insertionStatus[idx] !== 'matched') {
+                        // Use the recorded specific error
+                        // Note: TypeScript might complain if string doesn't match specific Union type
+                        // So we map it safely
+                        const status = insertionStatus[idx];
+                        if (status.includes('Parse Error')) {
+                            reason = status as any;
+                        }
+                    }
+
+                    overflow.push({
+                        date: log.date,
+                        medio: log.medio,
+                        originalTitle: log.originalTitle,
+                        franja: log.franja,
+                        timeRange: log.timeRange,
+                        duration: log.duration,
+                        insertions: remaining, // Only the remaining amount!
+                        reason
+                    });
+                }
+            });
+
             setReconciledData(reconciled);
+            setOverflowData(overflow);
 
             // Persist results
             const stateToSave: StoredSummaryState = {
                 reconciledData: reconciled,
+                overflowData: overflow,
                 budgetFileName: budgetData.fileName,
                 insertionFileName: insertionData.fileName
             };
@@ -297,11 +388,6 @@ export default function SummaryPage() {
                 case 'totalInserted':
                     comparison = a.totalInserted - b.totalInserted;
                     break;
-                case 'diff':
-                    const diffA = (a.totalInserted || 0) - a.orderedQuantity;
-                    const diffB = (b.totalInserted || 0) - b.orderedQuantity;
-                    comparison = diffA - diffB;
-                    break;
                 case 'reconciliationConfidence':
                     comparison = a.reconciliationConfidence - b.reconciliationConfidence;
                     break;
@@ -315,8 +401,7 @@ export default function SummaryPage() {
         if (!reconciledData) return null;
 
         const totalOrdered = reconciledData.reduce((sum, row) => sum + row.orderedQuantity, 0);
-        // Use insertionData directly to get the true total of insertions, regardless of matches
-        const totalInserted = insertionData?.data?.reduce((sum, row) => sum + (row.insertions || 0), 0) || 0;
+        const totalInserted = reconciledData.reduce((sum, row) => sum + row.totalInserted, 0);
 
         const underDelivered = reconciledData.filter(row => row.status === 'under' || row.status === 'missing').length;
         const overDelivered = reconciledData.filter(row => row.status === 'over').length;
@@ -336,12 +421,12 @@ export default function SummaryPage() {
             missing,
             confidenceDistribution
         };
-    }, [reconciledData, insertionData]);
+    }, [reconciledData]);
 
     const exportToCSV = () => {
         if (!reconciledData) return;
 
-        const headers = ['Date', 'Medio', 'Program', 'Schedule', 'Original Title', 'Duration', 'Ordered Qty', 'Insertion', 'Diff', 'Confidence'];
+        const headers = ['Date', 'Medio', 'Program', 'Schedule', 'Original Title', 'Duration', 'Ordered Qty', 'Insertion', 'Confidence'];
         const csvContent = [
             headers.join(','),
             ...filteredAndSortedData.map(row =>
@@ -354,7 +439,6 @@ export default function SummaryPage() {
                     row.durationSeconds || 0,
                     row.orderedQuantity,
                     row.totalInserted,
-                    (row.totalInserted || 0) - row.orderedQuantity,
                     row.reconciliationConfidence,
                 ].join(',')
             )
@@ -458,7 +542,7 @@ export default function SummaryPage() {
 
             {/* Summary Metrics Cards */}
             {stats && (
-                <div className="grid grid-cols-3 gap-4 w-full">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
                     <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl border border-blue-500/20">
                         <p className="text-sm text-muted-foreground">Total Ordered vs Inserted</p>
                         <div className="flex items-end gap-2 mt-1">
@@ -499,6 +583,13 @@ export default function SummaryPage() {
                             </div>
                         </div>
                     </div>
+                    <div className="p-4 bg-gradient-to-br from-red-500/10 to-red-600/5 rounded-xl border border-red-500/20">
+                        <p className="text-sm text-muted-foreground">Overflow / Unmatched</p>
+                        <div className="flex items-end gap-2 mt-1">
+                            <span className="text-2xl font-bold text-red-600">{overflowData.length}</span>
+                            <span className="text-sm text-muted-foreground mb-1">items</span>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -521,8 +612,15 @@ export default function SummaryPage() {
                         </Button>
                     </div>
 
+                    {/* Main Budget Table */}
                     <div className="rounded-xl border bg-card">
-                        <div className="max-h-[600px] overflow-auto">
+                        <div className="p-3 border-b bg-muted/30">
+                            <h3 className="font-semibold text-sm flex items-center gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                                Budget Reconciliation
+                            </h3>
+                        </div>
+                        <div className="max-h-[400px] overflow-auto">
                             <table className="w-full caption-bottom text-sm">
                                 <TableHeader className="sticky top-0 z-20 bg-card shadow-sm">
                                     <TableRow>
@@ -534,7 +632,6 @@ export default function SummaryPage() {
                                         <SortableHeader field="durationSeconds" center>Duration</SortableHeader>
                                         <SortableHeader field="orderedQuantity" center>Ordered Qty</SortableHeader>
                                         <SortableHeader field="totalInserted" center>Insertion</SortableHeader>
-                                        <SortableHeader field="diff" center>Diff</SortableHeader>
                                         <SortableHeader field="reconciliationConfidence" center>Confidence</SortableHeader>
                                     </TableRow>
                                 </TableHeader>
@@ -567,9 +664,6 @@ export default function SummaryPage() {
                                                     {row.totalInserted}
                                                 </span>
                                             </TableCell>
-                                            <TableCell className={`text-center font-bold ${(row.totalInserted - row.orderedQuantity) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                                                {row.totalInserted - row.orderedQuantity}
-                                            </TableCell>
                                             <TableCell className="text-center">
                                                 {row.reconciliationConfidence > 0 ? (
                                                     <div className={`
@@ -590,6 +684,70 @@ export default function SummaryPage() {
                             </table>
                         </div>
                     </div>
+
+                    {/* Overflow / Unmatched Table */}
+                    {overflowData.length > 0 && (
+                        <div className="rounded-xl border bg-card border-red-200">
+                            <div className="p-3 border-b bg-red-50">
+                                <h3 className="font-semibold text-sm flex items-center gap-2 text-red-700">
+                                    <AlertCircle className="w-4 h-4" />
+                                    Overflow / Unmatched Items ({overflowData.length})
+                                </h3>
+                            </div>
+                            <div className="max-h-[300px] overflow-auto">
+                                <table className="w-full caption-bottom text-sm">
+                                    <TableHeader className="sticky top-0 z-20 bg-card shadow-sm">
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Medio</TableHead>
+                                            <TableHead>Original Title</TableHead>
+                                            <TableHead>Franja</TableHead>
+                                            <TableHead>Time Range</TableHead>
+                                            <TableHead className="text-center">Duration</TableHead>
+                                            <TableHead className="text-center">Insertions</TableHead>
+                                            <TableHead>Reason</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {overflowData.map((row, idx) => (
+                                            <TableRow key={idx} className="hover:bg-muted/50">
+                                                <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
+                                                    {row.date}
+                                                </TableCell>
+                                                <TableCell className="font-medium text-xs">
+                                                    {row.medio}
+                                                </TableCell>
+                                                <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={row.originalTitle}>
+                                                    {row.originalTitle}
+                                                </TableCell>
+                                                <TableCell className="text-xs">
+                                                    {row.franja || '-'}
+                                                </TableCell>
+                                                <TableCell className="text-xs text-muted-foreground">
+                                                    {row.timeRange || '-'}
+                                                </TableCell>
+                                                <TableCell className="text-center text-xs">
+                                                    {row.duration}s
+                                                </TableCell>
+                                                <TableCell className="text-center font-bold text-red-600">
+                                                    {row.insertions}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={
+                                                        row.reason === 'Exceeded Order Qty' ? 'default' :
+                                                            row.reason === 'No Matching Budget' ? 'destructive' :
+                                                                'outline'
+                                                    } className="text-[10px]">
+                                                        {row.reason}
+                                                    </Badge>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
