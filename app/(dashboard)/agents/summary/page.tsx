@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { FileText, Play, Download, Search, CheckCircle2, AlertCircle, XCircle, ArrowUpDown } from 'lucide-react';
 import { useAiModel } from '@/hooks/use-ai-settings';
 import { useAliasMappings } from '@/hooks/use-alias-mappings';
+import { useFranjaMappings, FranjaMapping } from '@/hooks/use-franja-mappings';
 import { utils, writeFile } from 'xlsx';
 import { MonthFilter, DayFilter, MedioFilter } from '@/components/summary/DateFilter';
 import {
@@ -43,7 +44,7 @@ interface OverflowRow {
     timeRange: string;
     duration: number;
     insertions: number;
-    reason: 'Exceeded Order Qty' | 'No Matching Budget' | 'Parse Error (Budget)' | 'Parse Error (Insertion)' | 'Duration Mismatch' | 'Outside Schedule' | 'Budget Full' | 'No Budget for Medio' | 'No Budget for Date';
+    reason: 'Exceeded Order Qty' | 'No Matching Budget' | 'Parse Error (Budget)' | 'Parse Error (Insertion)' | 'Duration Mismatch' | 'Outside Schedule' | 'Budget Full' | 'No Budget for Medio' | 'No Budget for Date' | 'Franja Mismatch';
 }
 
 interface NonStandardRow extends InsertionLogRow {
@@ -78,6 +79,7 @@ type SortDirection = 'asc' | 'desc';
 export default function SummaryPage() {
     const { model } = useAiModel();
     const { getMappingObject } = useAliasMappings();
+    const { mappings: franjaMappings } = useFranjaMappings();
     const [budgetData, setBudgetData] = useState<StoredBudgetData | null>(null);
     const [insertionData, setInsertionData] = useState<StoredInsertionData | null>(null);
     const [reconciledData, setReconciledData] = useState<ReconciledRow[] | null>(null);
@@ -189,16 +191,21 @@ export default function SummaryPage() {
     const parseTimeRange = (timeStr: string | undefined): { start: number, end: number } | null => {
         if (!timeStr) return null;
         const normalized = timeStr.toLowerCase().replace(/\s+/g, '');
-        // Matches "6:00am-8:00am", "18:00-20:00", "06:00-11:30"
-        const match = normalized.match(/(\d{1,2}:\d{2})(?:[a-z]{2})?-(\d{1,2}:\d{2})(?:[a-z]{2})?/);
+        // Updated regex to capture am/pm
+        const match = normalized.match(/(\d{1,2}:\d{2})([a-z]{2})?-(\d{1,2}:\d{2})([a-z]{2})?/);
         if (!match) return null;
 
-        const parseMinutes = (t: string) => {
-            const [h, m] = t.split(':').map(Number);
+        const parseMinutes = (t: string, period: string | undefined) => {
+            let [h, m] = t.split(':').map(Number);
+            if (period === 'pm' && h !== 12) h += 12;
+            if (period === 'am' && h === 12) h = 0;
             return h * 60 + m;
         };
 
-        return { start: parseMinutes(match[1]), end: parseMinutes(match[2]) };
+        return {
+            start: parseMinutes(match[1], match[2]),
+            end: parseMinutes(match[3], match[4])
+        };
     };
 
     // Check if Budget schedule fits INSIDE Insertion time range
@@ -215,6 +222,72 @@ export default function SummaryPage() {
             return 'match';
         }
         return 'no_match';
+    };
+
+    // Helper to parse Franja time string like "6:00 AM" or "8:00 PM" to minutes since midnight
+    const parseFranjaTimeToMinutes = (timeStr: string): number | null => {
+        if (!timeStr) return null;
+        const normalized = timeStr.trim().toUpperCase();
+        // Match "6:00 AM", "11:30 PM", "8:00PM", etc.
+        const match = normalized.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+        if (!match) return null;
+
+        let hours = parseInt(match[1], 10);
+        const minutes = parseInt(match[2], 10);
+        const period = match[3]?.toUpperCase();
+
+        // Handle AM/PM conversion
+        if (period === 'PM' && hours !== 12) {
+            hours += 12;
+        } else if (period === 'AM' && hours === 12) {
+            hours = 0;
+        }
+
+        return hours * 60 + minutes;
+    };
+
+    // Check if Budget schedule overlaps with Insertion's Franja time segment
+    // Returns: 'overlap' | 'no_overlap' | 'franja_not_found' | 'parse_error'
+    const checkFranjaOverlap = (
+        budgetSched: string | undefined,
+        insertionFranja: string | undefined
+    ): 'overlap' | 'no_overlap' | 'franja_not_found' | 'parse_error' => {
+        if (!budgetSched || !insertionFranja) return 'parse_error';
+
+        // Find the Franja mapping - case-insensitive
+        const franjaMapping = franjaMappings.find(
+            m => m.label.toLowerCase() === insertionFranja.toLowerCase()
+        );
+        if (!franjaMapping) return 'franja_not_found';
+
+        // Parse Budget schedule
+        const budget = parseTimeRange(budgetSched);
+        if (!budget) return 'parse_error';
+
+        // Parse Franja time segment
+        const franjaStart = parseFranjaTimeToMinutes(franjaMapping.startTime);
+        const franjaEnd = parseFranjaTimeToMinutes(franjaMapping.endTime);
+        if (franjaStart === null || franjaEnd === null) return 'parse_error';
+
+        // Handle overnight spans (e.g., Madrugada: 11:00 PM - 5:59 AM)
+        // For overnight, franjaEnd < franjaStart
+        if (franjaEnd < franjaStart) {
+            // Budget overlaps if:
+            // - Budget starts during evening portion (>= franjaStart) OR
+            // - Budget ends during morning portion (<= franjaEnd) OR
+            // - Budget spans midnight
+            const budgetInEvening = budget.start >= franjaStart || budget.end >= franjaStart;
+            const budgetInMorning = budget.start <= franjaEnd || budget.end <= franjaEnd;
+            if (budgetInEvening || budgetInMorning) return 'overlap';
+            return 'no_overlap';
+        }
+
+        // Standard case: Check if Budget schedule overlaps with Franja segment
+        // Two ranges overlap if: budgetStart < franjaEnd AND budgetEnd > franjaStart
+        if (budget.start < franjaEnd && budget.end > franjaStart) {
+            return 'overlap';
+        }
+        return 'no_overlap';
     };
 
 
@@ -379,19 +452,22 @@ export default function SummaryPage() {
                     // CRITERIA 3: DURATION Check
                     if (budgetRow.durationSeconds !== log.duration) continue;
 
-                    // CRITERIA 4: TIME CONTAINMENT Check
-                    const containmentResult = checkContainment(budgetRow.schedule, log.timeRange);
+                    // CRITERIA 4: FRANJA OVERLAP Check
+                    // Use the insertion's Franja to check if Budget schedule falls within Franja time segment
+                    const franjaResult = checkFranjaOverlap(budgetRow.schedule, log.franja);
 
-                    if (containmentResult !== 'match') {
+                    if (franjaResult !== 'overlap') {
                         // Only record the error if it hasn't been matched successfully elsewhere
-                        // and we haven't already recorded a more specific error (optional)
                         if (insertionStatus[logIdx] !== 'matched') {
-                            if (containmentResult === 'parse_error_budget') insertionStatus[logIdx] = 'Parse Error (Budget)';
-                            else if (containmentResult === 'parse_error_insertion') insertionStatus[logIdx] = 'Parse Error (Insertion)';
-                            // If 'no_match', we leave it null or set to 'No Matching Budget' at the end
+                            if (franjaResult === 'franja_not_found' || franjaResult === 'no_overlap') {
+                                insertionStatus[logIdx] = 'Franja Mismatch';
+                            } else if (franjaResult === 'parse_error') {
+                                insertionStatus[logIdx] = 'Parse Error (Budget)';
+                            }
                         }
                         continue;
                     }
+
 
                     // Successfully matched
                     insertionStatus[logIdx] = 'matched'; // Mark as having found a valid home
@@ -468,7 +544,7 @@ export default function SummaryPage() {
                         let foundDate = false;
                         let foundMedio = false;
                         let foundDuration = false;
-                        let foundTime = false;
+                        let foundFranja = false;
 
                         for (const budgetRow of filteredBudgetRows) {
                             if (budgetRow.date === log.date) {
@@ -485,13 +561,12 @@ export default function SummaryPage() {
                                     if (budgetRow.durationSeconds === log.duration) {
                                         foundDuration = true;
 
-                                        const containment = checkContainment(budgetRow.schedule, log.timeRange);
-                                        if (containment === 'match') {
-                                            foundTime = true;
+                                        // Check Franja overlap instead of time containment
+                                        const franjaResult = checkFranjaOverlap(budgetRow.schedule, log.franja);
+                                        if (franjaResult === 'overlap') {
+                                            foundFranja = true;
                                             // If we got here, it implies we COULD have matched, but maybe didn't?
                                             // Ideally if it matched fully, it should be in 'matched' or 'Exceeded Order Qty'.
-                                            // But if we are in this block, 'insertionStatus[idx]' is null or not matched.
-                                            // So this case might be rare if logic above is correct.
                                         }
                                     }
                                 }
@@ -499,13 +574,13 @@ export default function SummaryPage() {
                         }
 
                         if (!foundDate) {
-                            bestReason = 'No Budget for Date'; // Or keep generic
+                            bestReason = 'No Budget for Date';
                         } else if (!foundMedio) {
                             bestReason = 'No Budget for Medio';
                         } else if (!foundDuration) {
                             bestReason = 'Duration Mismatch';
-                        } else if (!foundTime) {
-                            bestReason = 'Outside Schedule';
+                        } else if (!foundFranja) {
+                            bestReason = 'Franja Mismatch';
                         } else {
                             // If everything matched at least once but we still have remaining...
                             // It effectively means "No Budget Capacity" or "Budget Full"
@@ -513,6 +588,7 @@ export default function SummaryPage() {
                         }
 
                         reason = bestReason;
+
                     }
 
                     overflow.push({

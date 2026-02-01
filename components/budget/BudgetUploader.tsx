@@ -18,6 +18,7 @@ export interface NormalizedRow {
     orderedQuantity: number;
     durationSeconds: number;
     schedule?: string;
+    originalTitle?: string;
     confidence: number;
 }
 

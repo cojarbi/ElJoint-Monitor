@@ -16,12 +16,14 @@ import type { InsertionLogRow, InsertionLogSummary } from './InsertionLogUploade
 interface InsertionLogTableProps {
     data: InsertionLogRow[];
     summary: InsertionLogSummary;
+    hideControls?: boolean;
+    hideSummary?: boolean;
 }
 
 type SortField = 'date' | 'medio' | 'originalTitle' | 'timeRange' | 'insertions' | 'duration' | 'confidence';
 type SortDirection = 'asc' | 'desc';
 
-export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
+export function InsertionLogTable({ data, summary, hideControls = false, hideSummary = false }: InsertionLogTableProps) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sortField, setSortField] = useState<SortField>('date');
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -121,82 +123,86 @@ export function InsertionLogTable({ data, summary }: InsertionLogTableProps) {
     return (
         <div className="space-y-4">
             {/* Summary Cards */}
-            <div className="grid grid-cols-5 gap-4 w-full">
-                <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl border border-blue-500/20">
-                    <p className="text-sm text-muted-foreground">Total Rows</p>
-                    <p className="text-2xl font-bold text-blue-600">{summary.totalRows}</p>
-                </div>
+            {!hideSummary && (
+                <div className="grid grid-cols-5 gap-4 w-full">
+                    <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-600/5 rounded-xl border border-blue-500/20">
+                        <p className="text-sm text-muted-foreground">Total Rows</p>
+                        <p className="text-2xl font-bold text-blue-600">{summary.totalRows}</p>
+                    </div>
 
-                <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl border border-green-500/20">
-                    <p className="text-sm text-muted-foreground">Insertions by Medio</p>
-                    <div className="mt-1 space-y-1">
-                        {summary.medios.map(medio => (
-                            <div key={medio} className="flex justify-between items-center">
-                                <span className="text-sm font-medium">{medio}</span>
-                                <span className="text-sm font-bold text-green-600">{summary.insertionsByMedio[medio] || 0}</span>
+                    <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-600/5 rounded-xl border border-green-500/20">
+                        <p className="text-sm text-muted-foreground">Insertions by Medio</p>
+                        <div className="mt-1 space-y-1">
+                            {summary.medios.map(medio => (
+                                <div key={medio} className="flex justify-between items-center">
+                                    <span className="text-sm font-medium">{medio}</span>
+                                    <span className="text-sm font-bold text-green-600">{summary.insertionsByMedio[medio] || 0}</span>
+                                </div>
+                            ))}
+                            <div className="flex justify-between items-center pt-1 border-t border-green-500/20">
+                                <span className="text-sm font-semibold">Total</span>
+                                <span className="text-lg font-bold text-green-600">{summary.totalInsertions}</span>
                             </div>
-                        ))}
-                        <div className="flex justify-between items-center pt-1 border-t border-green-500/20">
-                            <span className="text-sm font-semibold">Total</span>
-                            <span className="text-lg font-bold text-green-600">{summary.totalInsertions}</span>
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl border border-purple-500/20">
+                        <p className="text-sm text-muted-foreground">Top Genres</p>
+                        <div className="mt-1 space-y-1">
+                            {topGenres.map(([genre, count]) => (
+                                <div key={genre} className="flex justify-between items-center">
+                                    <span className="text-xs font-medium truncate max-w-[120px]">{genre}</span>
+                                    <span className="text-xs font-bold text-purple-600">{count}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-xl border border-orange-500/20">
+                        <p className="text-sm text-muted-foreground">Date Range</p>
+                        <p className="text-lg font-bold text-orange-600">
+                            {summary.dateRange ? `${summary.dateRange.from} to ${summary.dateRange.to}` : 'N/A'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            {summary.programs} unique program categories
+                        </p>
+                    </div>
+
+                    <div className="p-4 bg-gradient-to-br from-teal-500/10 to-teal-600/5 rounded-xl border border-teal-500/20">
+                        <p className="text-sm text-muted-foreground">AI Confidence</p>
+                        <div className="mt-1 space-y-1">
+                            {summary.confidenceDistribution && Object.entries(summary.confidenceDistribution)
+                                .sort((a, b) => b[0].localeCompare(a[0]))
+                                .map(([label, count]) => (
+                                    <div key={label} className="flex justify-between items-center text-xs">
+                                        <span>{label}</span>
+                                        <span className="font-bold text-teal-600">{count}</span>
+                                    </div>
+                                ))}
+                            {!summary.confidenceDistribution && <span className="text-xs text-muted-foreground">No data</span>}
                         </div>
                     </div>
                 </div>
-
-                <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-600/5 rounded-xl border border-purple-500/20">
-                    <p className="text-sm text-muted-foreground">Top Genres</p>
-                    <div className="mt-1 space-y-1">
-                        {topGenres.map(([genre, count]) => (
-                            <div key={genre} className="flex justify-between items-center">
-                                <span className="text-xs font-medium truncate max-w-[120px]">{genre}</span>
-                                <span className="text-xs font-bold text-purple-600">{count}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-600/5 rounded-xl border border-orange-500/20">
-                    <p className="text-sm text-muted-foreground">Date Range</p>
-                    <p className="text-lg font-bold text-orange-600">
-                        {summary.dateRange ? `${summary.dateRange.from} to ${summary.dateRange.to}` : 'N/A'}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        {summary.programs} unique program categories
-                    </p>
-                </div>
-
-                <div className="p-4 bg-gradient-to-br from-teal-500/10 to-teal-600/5 rounded-xl border border-teal-500/20">
-                    <p className="text-sm text-muted-foreground">AI Confidence</p>
-                    <div className="mt-1 space-y-1">
-                        {summary.confidenceDistribution && Object.entries(summary.confidenceDistribution)
-                            .sort((a, b) => b[0].localeCompare(a[0]))
-                            .map(([label, count]) => (
-                                <div key={label} className="flex justify-between items-center text-xs">
-                                    <span>{label}</span>
-                                    <span className="font-bold text-teal-600">{count}</span>
-                                </div>
-                            ))}
-                        {!summary.confidenceDistribution && <span className="text-xs text-muted-foreground">No data</span>}
-                    </div>
-                </div>
-            </div>
+            )}
 
             {/* Controls */}
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div className="relative w-full sm:w-80">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search by date, medio, program, title..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
-                    />
+            {!hideControls && (
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                    <div className="relative w-full sm:w-80">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Search by date, medio, program, title..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="pl-10"
+                        />
+                    </div>
+                    <Button onClick={exportToCSV} variant="outline" className="gap-2">
+                        <Download className="w-4 h-4" />
+                        Export CSV
+                    </Button>
                 </div>
-                <Button onClick={exportToCSV} variant="outline" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Export CSV
-                </Button>
-            </div>
+            )}
 
             {/* Results count */}
             <p className="text-sm text-muted-foreground">

@@ -156,6 +156,61 @@ function detectScheduleColumn(
     return -1;
 }
 
+// Helper to sanitize/correct common schedule typos
+function sanitizeSchedule(schedule: string, program: string): string {
+    if (!schedule) return '';
+    const normalized = schedule.toLowerCase().trim().replace(/\s+/g, '');
+
+    // Parse times
+    // Matches "6:00am-08:00pm"
+    const match = normalized.match(/(\d{1,2}:\d{2})([a-z]{2})?-(\d{1,2}:\d{2})([a-z]{2})?/);
+    if (!match) return schedule;
+
+    const parseMinutes = (t: string, period: string | undefined): number => {
+        let [h, m] = t.split(':').map(Number);
+        if (period === 'pm' && h !== 12) h += 12;
+        if (period === 'am' && h === 12) h = 0;
+        return h * 60 + m;
+    };
+
+    const startStr = match[1];
+    const startPeriod = match[2]; // am or pm
+    const endStr = match[3];
+    const endPeriod = match[4]; // am or pm
+
+    const startMin = parseMinutes(startStr, startPeriod);
+    const endMin = parseMinutes(endStr, endPeriod);
+
+    // Calculate duration in minutes (handle overnight)
+    let duration = endMin - startMin;
+    if (duration < 0) duration += 24 * 60;
+
+    // HEURISTIC: If duration > 10 hours (600 mins), it's likely a typo
+    if (duration > 600) {
+        // Check keywords
+        const progLower = program.toLowerCase();
+
+        // 1. Estelar / Nocturno -> Should be PM-PM
+        if (progLower.includes('estelar') || progLower.includes('nocturno') || progLower.includes('prime')) {
+            // Force periods to PM context 
+            const newStart = (startPeriod === 'am' || !startPeriod) ? startStr + 'pm' : startStr + startPeriod;
+            const newEnd = (endPeriod === 'am' || !endPeriod) ? endStr + 'pm' : endStr + endPeriod;
+            console.log(`Sanitizing Schedule for "${program}": "${schedule}" -> "${newStart}-${newEnd}" (Estelar Rule)`);
+            return `${newStart}-${newEnd}`;
+        }
+
+        // 2. Matutino / Manana -> Should be AM-AM
+        if (progLower.includes('matutino') || progLower.includes('mañana') || progLower.includes('manana')) {
+            const newStart = (startPeriod === 'pm' || !startPeriod) ? startStr + 'am' : startStr + startPeriod;
+            const newEnd = (endPeriod === 'pm' || !endPeriod) ? endStr + 'am' : endStr + endPeriod;
+            console.log(`Sanitizing Schedule for "${program}": "${schedule}" -> "${newStart}-${newEnd}" (Matutino Rule)`);
+            return `${newStart}-${newEnd}`;
+        }
+    }
+
+    return schedule;
+}
+
 function normalizeBudgetSheet(
     sheetData: XLSX.WorkSheet,
     medio: string,
@@ -183,6 +238,7 @@ function normalizeBudgetSheet(
 
         // Find the Day Map for this specific block's header row
         const dayMap = findDayGridInRow(sheetData, headerRowIndex);
+
         if (!dayMap) {
             console.warn(`AI detected block at row ${headerRowIndex} but no day grid found.`);
             continue;
@@ -231,6 +287,7 @@ function normalizeBudgetSheet(
                 const scheduleCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: scheduleCol })];
                 if (scheduleCell?.v) {
                     schedule = String(scheduleCell.v).trim();
+                    schedule = sanitizeSchedule(schedule, program);
                 }
             }
 
@@ -330,6 +387,7 @@ function normalizeBudgetSheetDynamic(
                 const scheduleCell = sheetData[XLSX.utils.encode_cell({ r: rowIndex, c: scheduleCol })];
                 if (scheduleCell?.v) {
                     schedule = String(scheduleCell.v).trim();
+                    schedule = sanitizeSchedule(schedule, program);
                 }
             }
 
