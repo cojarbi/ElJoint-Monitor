@@ -120,6 +120,21 @@ export function DayFilter({ selectedDays, onDayChange }: DayFilterProps) {
                     <div className="p-3">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Select Days</span>
+                            <div className="flex gap-2">
+                                <span
+                                    className="text-[10px] text-primary cursor-pointer hover:underline"
+                                    onClick={() => onDayChange(days)}
+                                >
+                                    Select All
+                                </span>
+                                <span className="text-[10px] text-muted-foreground">/</span>
+                                <span
+                                    className="text-[10px] text-primary cursor-pointer hover:underline"
+                                    onClick={() => onDayChange([])}
+                                >
+                                    Deselect All
+                                </span>
+                            </div>
                         </div>
                         <div className="grid grid-cols-7 gap-1">
                             {days.map(d => (
@@ -137,19 +152,7 @@ export function DayFilter({ selectedDays, onDayChange }: DayFilterProps) {
                                 </button>
                             ))}
                         </div>
-                        {selectedDays.length > 0 && (
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full mt-3 h-7 text-xs"
-                                onClick={() => {
-                                    onDayChange([]);
-                                    setOpen(false);
-                                }}
-                            >
-                                Clear Day Selection
-                            </Button>
-                        )}
+
                     </div>
                 </ScrollArea>
             </PopoverContent>

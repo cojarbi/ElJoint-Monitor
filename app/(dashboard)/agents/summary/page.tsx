@@ -43,7 +43,7 @@ interface OverflowRow {
     timeRange: string;
     duration: number;
     insertions: number;
-    reason: 'Exceeded Order Qty' | 'No Matching Budget' | 'Parse Error (Budget)' | 'Parse Error (Insertion)';
+    reason: 'Exceeded Order Qty' | 'No Matching Budget' | 'Parse Error (Budget)' | 'Parse Error (Insertion)' | 'Duration Mismatch' | 'Outside Schedule' | 'Budget Full' | 'No Budget for Medio' | 'No Budget for Date';
 }
 
 interface NonStandardRow extends InsertionLogRow {
@@ -72,6 +72,7 @@ interface StoredSummaryState {
 
 type SortField = 'date' | 'medio' | 'program' | 'schedule' | 'originalTitle' | 'durationSeconds' | 'orderedQuantity' | 'totalInserted' | 'reconciliationConfidence';
 type OverflowSortField = 'date' | 'medio' | 'originalTitle' | 'franja' | 'timeRange' | 'duration' | 'insertions' | 'reason';
+type NonStandardSortField = 'date' | 'medio' | 'originalTitle' | 'franja' | 'timeRange' | 'duration' | 'insertions' | 'reason';
 type SortDirection = 'asc' | 'desc';
 
 export default function SummaryPage() {
@@ -120,6 +121,8 @@ export default function SummaryPage() {
     const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
     const [overflowSortField, setOverflowSortField] = useState<OverflowSortField>('date');
     const [overflowSortDirection, setOverflowSortDirection] = useState<SortDirection>('asc');
+    const [nonStandardSortField, setNonStandardSortField] = useState<NonStandardSortField>('date');
+    const [nonStandardSortDirection, setNonStandardSortDirection] = useState<SortDirection>('asc');
     const [accordionValue, setAccordionValue] = useState<string>("");
 
     useEffect(() => {
@@ -445,12 +448,71 @@ export default function SummaryPage() {
                         reason = 'Exceeded Order Qty';
                     } else if (insertionStatus[idx] && insertionStatus[idx] !== 'matched') {
                         // Use the recorded specific error
-                        // Note: TypeScript might complain if string doesn't match specific Union type
-                        // So we map it safely
                         const status = insertionStatus[idx];
                         if (status.includes('Parse Error')) {
                             reason = status as any;
                         }
+                    } else {
+                        // It wasn't matched at all. Let's find out WHY.
+                        // We check against ALL budget rows (filtered) to see what criteria failed.
+                        // We iterate and try to find the "closest" failure.
+                        // Order of specificity:
+                        // 1. Date Found?
+                        // 2. Medio Found? (Budget exists for this medio)
+                        // 3. Duration Matched?
+                        // 4. Time/Schedule Matched?
+                        // 5. If all matched => Budget Full (Capacity issue) - but we covered "exceeded" above?
+                        //    Actually "Budget Full" is if we matched but ran out of budget capacity BEFORE this row.
+
+                        let bestReason: OverflowRow['reason'] = 'No Matching Budget';
+                        let foundDate = false;
+                        let foundMedio = false;
+                        let foundDuration = false;
+                        let foundTime = false;
+
+                        for (const budgetRow of filteredBudgetRows) {
+                            if (budgetRow.date === log.date) {
+                                foundDate = true;
+
+                                const budgetMedioLower = budgetRow.medio?.toLowerCase();
+                                const directMedioMatch = log.medio?.toLowerCase() === budgetMedioLower;
+                                const mappedMedio = medioMap[log.medio];
+                                const aiMedioMatch = mappedMedio && mappedMedio.toLowerCase() === budgetMedioLower;
+
+                                if (directMedioMatch || aiMedioMatch) {
+                                    foundMedio = true;
+
+                                    if (budgetRow.durationSeconds === log.duration) {
+                                        foundDuration = true;
+
+                                        const containment = checkContainment(budgetRow.schedule, log.timeRange);
+                                        if (containment === 'match') {
+                                            foundTime = true;
+                                            // If we got here, it implies we COULD have matched, but maybe didn't?
+                                            // Ideally if it matched fully, it should be in 'matched' or 'Exceeded Order Qty'.
+                                            // But if we are in this block, 'insertionStatus[idx]' is null or not matched.
+                                            // So this case might be rare if logic above is correct.
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!foundDate) {
+                            bestReason = 'No Budget for Date'; // Or keep generic
+                        } else if (!foundMedio) {
+                            bestReason = 'No Budget for Medio';
+                        } else if (!foundDuration) {
+                            bestReason = 'Duration Mismatch';
+                        } else if (!foundTime) {
+                            bestReason = 'Outside Schedule';
+                        } else {
+                            // If everything matched at least once but we still have remaining...
+                            // It effectively means "No Budget Capacity" or "Budget Full"
+                            bestReason = 'Budget Full';
+                        }
+
+                        reason = bestReason;
                     }
 
                     overflow.push({
@@ -558,6 +620,15 @@ export default function SummaryPage() {
         }
     };
 
+    const handleNonStandardSort = (field: NonStandardSortField) => {
+        if (nonStandardSortField === field) {
+            setNonStandardSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setNonStandardSortField(field);
+            setNonStandardSortDirection('asc');
+        }
+    };
+
     const filteredAndSortedData = useMemo(() => {
         if (!reconciledData) return [];
         let data = [...reconciledData];
@@ -640,6 +711,39 @@ export default function SummaryPage() {
             return overflowSortDirection === 'asc' ? comparison : -comparison;
         });
     }, [overflowData, overflowSortField, overflowSortDirection]);
+
+    const sortedNonStandardData = useMemo(() => {
+        return [...nonStandardData].sort((a, b) => {
+            let comparison = 0;
+            switch (nonStandardSortField) {
+                case 'date':
+                    comparison = a.date.localeCompare(b.date);
+                    break;
+                case 'medio':
+                    comparison = a.medio.localeCompare(b.medio);
+                    break;
+                case 'originalTitle':
+                    comparison = a.originalTitle.localeCompare(b.originalTitle);
+                    break;
+                case 'franja':
+                    comparison = (a.franja || '').localeCompare(b.franja || '');
+                    break;
+                case 'timeRange':
+                    comparison = (a.timeRange || '').localeCompare(b.timeRange || '');
+                    break;
+                case 'duration':
+                    comparison = a.duration - b.duration;
+                    break;
+                case 'insertions':
+                    comparison = a.insertions - b.insertions;
+                    break;
+                case 'reason':
+                    comparison = a.reason.localeCompare(b.reason);
+                    break;
+            }
+            return nonStandardSortDirection === 'asc' ? comparison : -comparison;
+        });
+    }, [nonStandardData, nonStandardSortField, nonStandardSortDirection]);
 
     const stats = useMemo(() => {
         if (!reconciledData) return null;
@@ -1164,7 +1268,7 @@ export default function SummaryPage() {
                                                                 <TableCell>
                                                                     <Badge variant={
                                                                         row.reason === 'Exceeded Order Qty' ? 'default' :
-                                                                            row.reason === 'No Matching Budget' ? 'destructive' :
+                                                                            row.reason === 'No Matching Budget' || row.reason === 'Budget Full' ? 'destructive' :
                                                                                 'outline'
                                                                     } className="text-[10px]">
                                                                         {row.reason}
@@ -1190,18 +1294,18 @@ export default function SummaryPage() {
                                                 <table className="w-full caption-bottom text-sm">
                                                     <TableHeader className="sticky top-0 z-20 bg-orange-50 shadow-sm">
                                                         <TableRow className="hover:bg-transparent">
-                                                            <TableHead className="text-orange-900">Date</TableHead>
-                                                            <TableHead className="text-orange-900">Medio</TableHead>
-                                                            <TableHead className="text-orange-900">Original Title</TableHead>
-                                                            <TableHead className="text-orange-900">Franja</TableHead>
-                                                            <TableHead className="text-center text-orange-900">Time</TableHead>
-                                                            <TableHead className="text-center text-orange-900">Duration</TableHead>
-                                                            <TableHead className="text-center text-orange-900">Insertions</TableHead>
-                                                            <TableHead className="text-orange-900">Reason</TableHead>
+                                                            <SortableHeader field="date" currentSortField={nonStandardSortField} onSort={handleNonStandardSort} currentSortDirection={nonStandardSortDirection}>Date</SortableHeader>
+                                                            <SortableHeader field="medio" currentSortField={nonStandardSortField} onSort={handleNonStandardSort} currentSortDirection={nonStandardSortDirection}>Medio</SortableHeader>
+                                                            <SortableHeader field="originalTitle" currentSortField={nonStandardSortField} onSort={handleNonStandardSort} currentSortDirection={nonStandardSortDirection}>Original Title</SortableHeader>
+                                                            <SortableHeader field="franja" currentSortField={nonStandardSortField} onSort={handleNonStandardSort} currentSortDirection={nonStandardSortDirection}>Franja</SortableHeader>
+                                                            <SortableHeader field="timeRange" currentSortField={nonStandardSortField} onSort={handleNonStandardSort} currentSortDirection={nonStandardSortDirection} center>Time</SortableHeader>
+                                                            <SortableHeader field="duration" currentSortField={nonStandardSortField} onSort={handleNonStandardSort} currentSortDirection={nonStandardSortDirection} center>Duration</SortableHeader>
+                                                            <SortableHeader field="insertions" currentSortField={nonStandardSortField} onSort={handleNonStandardSort} currentSortDirection={nonStandardSortDirection} center>Insertions</SortableHeader>
+                                                            <SortableHeader field="reason" currentSortField={nonStandardSortField} onSort={handleNonStandardSort} currentSortDirection={nonStandardSortDirection}>Reason</SortableHeader>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
-                                                        {nonStandardData.map((row, idx) => (
+                                                        {sortedNonStandardData.map((row, idx) => (
                                                             <TableRow key={idx} className="hover:bg-orange-100/50">
                                                                 <TableCell className="font-mono text-xs text-muted-foreground">
                                                                     {row.date}
