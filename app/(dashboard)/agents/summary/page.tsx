@@ -51,6 +51,16 @@ interface NonStandardRow extends InsertionLogRow {
     reason: 'Non-Standard Duration';
 }
 
+interface UnmappedMedioRow {
+    date: string;
+    medio: string;
+    originalTitle: string;
+    franja: string;
+    timeRange: string;
+    duration: number;
+    insertions: number;
+}
+
 interface StoredBudgetData {
     data: NormalizedRow[];
     fileName?: string;
@@ -85,6 +95,7 @@ export default function SummaryPage() {
     const [reconciledData, setReconciledData] = useState<ReconciledRow[] | null>(null);
     const [overflowData, setOverflowData] = useState<OverflowRow[]>([]);
     const [nonStandardData, setNonStandardData] = useState<NonStandardRow[]>([]);
+    const [unmappedMedioData, setUnmappedMedioData] = useState<UnmappedMedioRow[]>([]);
     const [selectedMonths, setSelectedMonths] = useState<string[]>([]);
     const [selectedDays, setSelectedDays] = useState<number[]>([]);
     const [selectedMedios, setSelectedMedios] = useState<string[]>([]);
@@ -125,6 +136,8 @@ export default function SummaryPage() {
     const [overflowSortDirection, setOverflowSortDirection] = useState<SortDirection>('asc');
     const [nonStandardSortField, setNonStandardSortField] = useState<NonStandardSortField>('date');
     const [nonStandardSortDirection, setNonStandardSortDirection] = useState<SortDirection>('asc');
+    const [unmappedMedioSortField, setUnmappedMedioSortField] = useState<'date' | 'medio' | 'originalTitle' | 'franja' | 'timeRange' | 'duration' | 'insertions'>('date');
+    const [unmappedMedioSortDirection, setUnmappedMedioSortDirection] = useState<SortDirection>('asc');
     const [accordionValue, setAccordionValue] = useState<string>("");
 
     useEffect(() => {
@@ -290,7 +303,12 @@ export default function SummaryPage() {
         return 'no_overlap';
     };
 
-
+    // 4. Auto-Reconcile Effect
+    useEffect(() => {
+        if (budgetData && insertionData) {
+            reconcileData();
+        }
+    }, [budgetData, insertionData, selectedMonths, selectedDays, selectedMedios, accordionValue]);
     const reconcileData = async () => {
         console.log('🔍 reconcileData called! budgetData:', budgetData, 'insertionData:', insertionData);
         if (!budgetData?.data || !insertionData?.data) {
@@ -336,16 +354,14 @@ export default function SummaryPage() {
                     return true;
                 });
             } else if (selectedDays.length > 0) {
-                // Even if no months explicitly selected (meaning all), apply day filter if set
                 filteredBudgetRows = budgetRows.filter(row => {
                     const dayPart = parseInt(row.date.split('-')[2], 10);
                     return selectedDays.includes(dayPart);
                 });
             }
 
-            if (selectedMedios.length > 0) {
-                filteredBudgetRows = filteredBudgetRows.filter(row => selectedMedios.includes(row.medio));
-            }
+            // DO NOT filter by Medio here. We need full context for AI mapping and correct matching.
+            // We will filter the RESULTS instead.
 
             let filteredInsertionRows = insertionRows;
             if (selectedMonths.length > 0) {
@@ -379,37 +395,12 @@ export default function SummaryPage() {
                 }
             });
 
-            // 1. Prepare lists for AI (Only Medios now)
-            // Use filtered budget rows for mapping context? Maybe safer to use all to ensure we capture all medio names
-            // But for reconciliation we only care about filtered.
-            // Let's use filteredBudgetRows for reconciliation.
-            const budgetMedios = Array.from(new Set(filteredBudgetRows.map(r => r.medio).filter(Boolean)));
-            const insertionMedios = Array.from(new Set(standardInsertions.map(r => r.medio).filter(Boolean)));
+            // 1. Prepare Manual Aliases
+            // We only use manual mappings now. No AI.
+            const medioAliases = getMappingObject('medios');
+            const medioMap: Record<string, string | null> = {};
 
-            // 2. Call AI API for Medio Mapping only
-            let medioMap: Record<string, string | null> = {};
-            setStatusMessage('Mapping Channels...');
 
-            try {
-                const response = await fetch('/api/reconcile-data', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        budgetMedios,
-                        insertionMedios,
-                        modelName: model,
-                        medioAliases: getMappingObject('medios')
-                    })
-                });
-                const result = await response.json();
-
-                if (result.medioMapping) medioMap = result.medioMapping;
-            } catch (error) {
-                console.error("AI Reconciliation API failed, falling back to direct match", error);
-            }
-
-            // 3. Reconcile - New Logic with Resource Consumption
-            setStatusMessage('Reconciling Matches...');
 
             // Track remaining capacity for each budget row
             const budgetCapacity: number[] = filteredBudgetRows.map(r => r.orderedQuantity);
@@ -428,7 +419,7 @@ export default function SummaryPage() {
                 insertionByDate[row.date].push({ row, idx });
             });
 
-            const reconciled = filteredBudgetRows.map((budgetRow, budgetIdx) => {
+            let reconciledResults = filteredBudgetRows.map((budgetRow, budgetIdx) => {
                 const candidateMatches = insertionByDate[budgetRow.date] || [];
 
                 let totalInserted = 0;
@@ -443,9 +434,16 @@ export default function SummaryPage() {
                     // CRITERIA 2: MEDIO Check
                     const budgetMedioLower = budgetRow.medio?.toLowerCase();
                     const directMedioMatch = log.medio?.toLowerCase() === budgetMedioLower;
+
+                    // Check Manual Dictionary First
+                    const manualMapped = medioAliases[log.medio];
+                    const manualMedioMatch = manualMapped && manualMapped.toLowerCase() === budgetMedioLower;
+
+                    // Check AI Map
                     const mappedMedio = medioMap[log.medio];
                     const aiMedioMatch = mappedMedio && mappedMedio.toLowerCase() === budgetMedioLower;
-                    const medioMatch = directMedioMatch || aiMedioMatch;
+
+                    const medioMatch = directMedioMatch || manualMedioMatch || aiMedioMatch;
 
                     if (!medioMatch) continue;
 
@@ -552,10 +550,14 @@ export default function SummaryPage() {
 
                                 const budgetMedioLower = budgetRow.medio?.toLowerCase();
                                 const directMedioMatch = log.medio?.toLowerCase() === budgetMedioLower;
+
+                                const manualMapped = medioAliases[log.medio];
+                                const manualMedioMatch = manualMapped && manualMapped.toLowerCase() === budgetMedioLower;
+
                                 const mappedMedio = medioMap[log.medio];
                                 const aiMedioMatch = mappedMedio && mappedMedio.toLowerCase() === budgetMedioLower;
 
-                                if (directMedioMatch || aiMedioMatch) {
+                                if (directMedioMatch || manualMedioMatch || aiMedioMatch) {
                                     foundMedio = true;
 
                                     if (budgetRow.durationSeconds === log.duration) {
@@ -607,7 +609,23 @@ export default function SummaryPage() {
             let finalOverflow = overflow;
             let finalNonStandard = nonStandardInsertions;
 
-            // Apply Medio Filter to Overflow and Non-Standard
+            // Separate out "No Budget for Medio" items into their own list for clarity
+            const unmappedMedioItems: UnmappedMedioRow[] = overflow
+                .filter(row => row.reason === 'No Budget for Medio')
+                .map(row => ({
+                    date: row.date,
+                    medio: row.medio,
+                    originalTitle: row.originalTitle,
+                    franja: row.franja,
+                    timeRange: row.timeRange,
+                    duration: row.duration,
+                    insertions: row.insertions
+                }));
+
+            // Remove those items from the main overflow list
+            const mainOverflow = overflow.filter(row => row.reason !== 'No Budget for Medio');
+
+            // Apply Medio Filter to RESULTS (Reconciled, Overflow, NonStandard)
             if (selectedMedios.length > 0) {
                 const isMedioMatch = (m: string) => {
                     if (!m) return false;
@@ -619,17 +637,21 @@ export default function SummaryPage() {
                     return false;
                 };
 
-                finalOverflow = overflow.filter(row => isMedioMatch(row.medio));
+                reconciledResults = reconciledResults.filter(row => selectedMedios.includes(row.medio));
+                finalOverflow = mainOverflow.filter(row => isMedioMatch(row.medio));
                 finalNonStandard = nonStandardInsertions.filter(row => isMedioMatch(row.medio));
+            } else {
+                finalOverflow = mainOverflow;
             }
 
-            setReconciledData(reconciled);
+            setReconciledData(reconciledResults);
             setOverflowData(finalOverflow);
             setNonStandardData(finalNonStandard);
+            setUnmappedMedioData(unmappedMedioItems);
 
             // Persist results
             const stateToSave: StoredSummaryState = {
-                reconciledData: reconciled,
+                reconciledData: reconciledResults,
                 overflowData: overflow,
                 budgetFileName: budgetData.fileName,
                 insertionFileName: insertionData.fileName,
@@ -702,6 +724,15 @@ export default function SummaryPage() {
         } else {
             setNonStandardSortField(field);
             setNonStandardSortDirection('asc');
+        }
+    };
+
+    const handleUnmappedMedioSort = (field: typeof unmappedMedioSortField) => {
+        if (unmappedMedioSortField === field) {
+            setUnmappedMedioSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            setUnmappedMedioSortField(field);
+            setUnmappedMedioSortDirection('asc');
         }
     };
 
@@ -821,20 +852,55 @@ export default function SummaryPage() {
         });
     }, [nonStandardData, nonStandardSortField, nonStandardSortDirection]);
 
+    const sortedUnmappedMedioData = useMemo(() => {
+        return [...unmappedMedioData].sort((a, b) => {
+            let comparison = 0;
+            switch (unmappedMedioSortField) {
+                case 'date':
+                    comparison = a.date.localeCompare(b.date);
+                    break;
+                case 'medio':
+                    comparison = a.medio.localeCompare(b.medio);
+                    break;
+                case 'originalTitle':
+                    comparison = a.originalTitle.localeCompare(b.originalTitle);
+                    break;
+                case 'franja':
+                    comparison = (a.franja || '').localeCompare(b.franja || '');
+                    break;
+                case 'timeRange':
+                    comparison = (a.timeRange || '').localeCompare(b.timeRange || '');
+                    break;
+                case 'duration':
+                    comparison = a.duration - b.duration;
+                    break;
+                case 'insertions':
+                    comparison = a.insertions - b.insertions;
+                    break;
+            }
+            return unmappedMedioSortDirection === 'asc' ? comparison : -comparison;
+        });
+    }, [unmappedMedioData, unmappedMedioSortField, unmappedMedioSortDirection]);
+
     const stats = useMemo(() => {
         if (!reconciledData) return null;
 
         const totalOrdered = reconciledData.reduce((sum, row) => sum + row.orderedQuantity, 0);
         const totalInserted = reconciledData.reduce((sum, row) => sum + row.totalInserted, 0);
 
-        const underDelivered = reconciledData.filter(row => row.status === 'under').length;
-        const overDelivered = reconciledData.filter(row => row.status === 'over').length;
-        const missing = reconciledData.filter(row => row.status === 'missing').length;
+        const underDelivered = reconciledData.reduce((sum, row) =>
+            row.status === 'under' ? sum + row.difference : sum, 0);
+
+        const overDelivered = reconciledData.reduce((sum, row) =>
+            row.status === 'over' ? sum + Math.abs(row.difference) : sum, 0);
+
+        const missing = reconciledData.reduce((sum, row) =>
+            row.status === 'missing' ? sum + row.orderedQuantity : sum, 0);
 
         const confidenceDistribution = {
-            high: reconciledData.filter(row => row.reconciliationConfidence >= 90).length,
-            medium: reconciledData.filter(row => row.reconciliationConfidence >= 70 && row.reconciliationConfidence < 90).length,
-            low: reconciledData.filter(row => row.reconciliationConfidence < 70).length
+            high: reconciledData.reduce((sum, row) => row.reconciliationConfidence >= 90 ? sum + row.totalInserted : sum, 0),
+            medium: reconciledData.reduce((sum, row) => row.reconciliationConfidence >= 70 && row.reconciliationConfidence < 90 ? sum + row.totalInserted : sum, 0),
+            low: reconciledData.reduce((sum, row) => row.reconciliationConfidence < 70 ? sum + row.totalInserted : sum, 0)
         };
 
         const overflowCount = overflowData.reduce((sum, item) => sum + item.insertions, 0);
@@ -843,9 +909,14 @@ export default function SummaryPage() {
         const deliveryByMedio = reconciledData.reduce((acc, row) => {
             const medio = row.medio || 'Unknown';
             if (!acc[medio]) acc[medio] = { missing: 0, under: 0, over: 0 };
-            if (row.status === 'missing') acc[medio].missing++;
-            if (row.status === 'under') acc[medio].under++;
-            if (row.status === 'over') acc[medio].over++;
+
+            if (row.status === 'missing') {
+                acc[medio].missing += row.orderedQuantity;
+            } else if (row.status === 'under') {
+                acc[medio].under += row.difference;
+            } else if (row.status === 'over') {
+                acc[medio].over += Math.abs(row.difference);
+            }
             return acc;
         }, {} as Record<string, { missing: number, under: number, over: number }>);
 
@@ -1162,27 +1233,7 @@ export default function SummaryPage() {
                             </Card>
                         </div>
 
-                        {/* Reconcile Button */}
-                        <div className="h-8 shrink-0">
-                            <Button
-                                size="sm"
-                                onClick={reconcileData}
-                                disabled={isLoading || !budgetData || !insertionData}
-                                className="w-full h-full shadow-sm text-[10px]"
-                            >
-                                {isLoading ? (
-                                    <span className="animate-pulse flex items-center gap-2">
-                                        <span className="w-1.5 h-1.5 bg-primary-foreground rounded-full animate-bounce" />
-                                        Processing...
-                                    </span>
-                                ) : (
-                                    <span className="flex items-center gap-1.5">
-                                        <Play className="w-3 h-3 fill-current" />
-                                        Reconcile
-                                    </span>
-                                )}
-                            </Button>
-                        </div>
+
                     </div>
 
                     {/* Column 4: Remainder Spacing - Span 2 */}
@@ -1290,7 +1341,7 @@ export default function SummaryPage() {
                                     <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground w-full">
                                         <AlertCircle className="w-4 h-4" />
                                         <span>
-                                            Overflow / Unmatched Items ({overflowData.length}) / Non-Standard Durations (Excluded from Match) ({nonStandardData.length})
+                                            Overflow / Unmatched Items ({stats?.overflowCount || 0}) / Non-Standard Durations (Excluded from Match) ({stats?.nonStandardCount || 0})
                                         </span>
                                     </div>
                                 </AccordionTrigger>
@@ -1300,7 +1351,7 @@ export default function SummaryPage() {
                                         <div className="rounded-xl border bg-card border-red-200">
                                             <div className="p-3 border-b bg-red-50">
                                                 <h3 className="font-semibold text-sm flex items-center gap-2 text-red-700">
-                                                    Overflow / Unmatched Items ({overflowData.length})
+                                                    Overflow / Unmatched Items ({stats?.overflowCount || 0})
                                                 </h3>
                                             </div>
                                             <div className="max-h-[300px] overflow-auto">
@@ -1342,13 +1393,12 @@ export default function SummaryPage() {
                                                                     {row.insertions}
                                                                 </TableCell>
                                                                 <TableCell>
-                                                                    <Badge variant={
-                                                                        row.reason === 'Exceeded Order Qty' ? 'default' :
-                                                                            row.reason === 'No Matching Budget' || row.reason === 'Budget Full' ? 'destructive' :
-                                                                                'outline'
-                                                                    } className="text-[10px]">
+                                                                    <span className={`text-[10px] font-medium ${row.reason === 'Exceeded Order Qty' ? 'text-green-600' :
+                                                                        row.reason === 'No Matching Budget' || row.reason === 'Budget Full' ? 'text-red-600' :
+                                                                            'text-muted-foreground'
+                                                                        }`}>
                                                                         {row.reason}
-                                                                    </Badge>
+                                                                    </span>
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))}
@@ -1363,7 +1413,7 @@ export default function SummaryPage() {
                                         <div className="rounded-xl border bg-card border-orange-200">
                                             <div className="p-3 border-b bg-orange-50">
                                                 <h3 className="font-semibold text-sm flex items-center gap-2 text-orange-700">
-                                                    Non-Standard Durations (Excluded from Match) ({nonStandardData.length})
+                                                    Non-Standard Durations (Excluded from Match) ({stats?.nonStandardCount || 0})
                                                 </h3>
                                             </div>
                                             <div className="max-h-[300px] overflow-auto">
@@ -1406,6 +1456,72 @@ export default function SummaryPage() {
                                                                 </TableCell>
                                                                 <TableCell className="text-xs text-orange-600 font-medium">
                                                                     {row.reason}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Unmapped Medio Table */}
+                                    {unmappedMedioData.length > 0 && (
+                                        <div className="pt-4">
+                                            <h4 className="text-sm font-semibold text-purple-600 mb-2 flex items-center gap-2">
+                                                <span className="w-2 h-2 bg-purple-500 rounded-full" />
+                                                Unmapped Medio ({unmappedMedioData.reduce((sum, item) => sum + item.insertions, 0)})
+                                            </h4>
+                                            <div className="rounded-lg border border-purple-200/50 overflow-hidden">
+                                                <table className="w-full text-xs">
+                                                    <TableHeader className="bg-purple-50/50 sticky top-0 z-10">
+                                                        <TableRow>
+                                                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleUnmappedMedioSort('date')}>
+                                                                <div className="flex items-center gap-1">Date <ArrowUpDown className="w-3 h-3" /></div>
+                                                            </TableHead>
+                                                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleUnmappedMedioSort('medio')}>
+                                                                <div className="flex items-center gap-1">Medio <ArrowUpDown className="w-3 h-3" /></div>
+                                                            </TableHead>
+                                                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleUnmappedMedioSort('originalTitle')}>
+                                                                <div className="flex items-center gap-1">Original Title <ArrowUpDown className="w-3 h-3" /></div>
+                                                            </TableHead>
+                                                            <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => handleUnmappedMedioSort('franja')}>
+                                                                <div className="flex items-center gap-1">Franja <ArrowUpDown className="w-3 h-3" /></div>
+                                                            </TableHead>
+                                                            <TableHead className="cursor-pointer hover:bg-muted/50 text-center" onClick={() => handleUnmappedMedioSort('timeRange')}>
+                                                                <div className="flex items-center gap-1 justify-center">Time <ArrowUpDown className="w-3 h-3" /></div>
+                                                            </TableHead>
+                                                            <TableHead className="cursor-pointer hover:bg-muted/50 text-center" onClick={() => handleUnmappedMedioSort('duration')}>
+                                                                <div className="flex items-center gap-1 justify-center">Duration <ArrowUpDown className="w-3 h-3" /></div>
+                                                            </TableHead>
+                                                            <TableHead className="cursor-pointer hover:bg-muted/50 text-center" onClick={() => handleUnmappedMedioSort('insertions')}>
+                                                                <div className="flex items-center gap-1 justify-center">Insertions <ArrowUpDown className="w-3 h-3" /></div>
+                                                            </TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {sortedUnmappedMedioData.map((row, idx) => (
+                                                            <TableRow key={idx} className="hover:bg-purple-100/50">
+                                                                <TableCell className="font-mono text-xs text-muted-foreground">
+                                                                    {row.date}
+                                                                </TableCell>
+                                                                <TableCell className="font-medium text-xs text-purple-700">
+                                                                    {row.medio}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate" title={row.originalTitle}>
+                                                                    {row.originalTitle}
+                                                                </TableCell>
+                                                                <TableCell className="text-xs">
+                                                                    {row.franja || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="text-center text-xs font-mono">
+                                                                    {row.timeRange || '-'}
+                                                                </TableCell>
+                                                                <TableCell className="text-center text-xs">
+                                                                    {row.duration}s
+                                                                </TableCell>
+                                                                <TableCell className="text-center font-medium">
+                                                                    {row.insertions}
                                                                 </TableCell>
                                                             </TableRow>
                                                         ))}

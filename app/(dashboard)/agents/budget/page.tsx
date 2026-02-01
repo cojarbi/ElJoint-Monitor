@@ -168,11 +168,11 @@ export default function BudgetPage() {
         const totalRows = filteredResults.length;
         const totalOrdered = filteredResults.reduce((sum, row) => sum + row.orderedQuantity, 0);
 
-        // Confidence
+        // Confidence Distribution based on Ordered Quantity
         const confidenceDistribution = {
-            high: filteredResults.filter(row => (row.confidence || 0) >= 90).length,
-            medium: filteredResults.filter(row => (row.confidence || 0) >= 70 && (row.confidence || 0) < 90).length,
-            low: filteredResults.filter(row => (row.confidence || 0) < 70).length
+            high: filteredResults.reduce((sum, row) => (Number(row.confidence) || 0) >= 90 ? sum + row.orderedQuantity : sum, 0),
+            medium: filteredResults.reduce((sum, row) => (Number(row.confidence) || 0) >= 70 && (Number(row.confidence) || 0) < 90 ? sum + row.orderedQuantity : sum, 0),
+            low: filteredResults.reduce((sum, row) => (Number(row.confidence) || 0) < 70 ? sum + row.orderedQuantity : sum, 0)
         };
 
         return { totalRows, totalOrdered, confidenceDistribution };

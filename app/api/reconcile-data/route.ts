@@ -12,6 +12,12 @@ export async function POST(request: NextRequest) {
     try {
         const { budgetMedios = [], insertionMedios = [], modelName = 'gemini-3-flash-preview' } = await request.json();
 
+        console.log('🔗 [API] Reconciliation Request Received:', {
+            budgetCount: budgetMedios.length,
+            insertionCount: insertionMedios.length,
+            model: modelName
+        });
+
         const model = genAI.getGenerativeModel({ model: modelName });
 
         // Generate stable IDs for all items

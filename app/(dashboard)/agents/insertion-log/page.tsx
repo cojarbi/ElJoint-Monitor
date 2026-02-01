@@ -6,7 +6,7 @@ import { InsertionLogTable } from '@/components/insertion-log/InsertionLogTable'
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ScrollText, FileSpreadsheet, AlertCircle, Search, Download, CheckCircle2 } from 'lucide-react';
+import { ScrollText, FileSpreadsheet, AlertCircle, Search, Download, CheckCircle2, FileText } from 'lucide-react';
 import { MonthFilter, DayFilter, MedioFilter } from '@/components/summary/DateFilter';
 import { utils, writeFile } from 'xlsx';
 
@@ -165,10 +165,11 @@ export default function InsertionLogPage() {
         const totalInsertions = filteredResults.reduce((sum, row) => sum + row.insertions, 0);
 
         // Confidence Distribution
+        // Confidence Distribution based on Insertions (Sum of quanity)
         const confidenceDistribution = {
-            high: filteredResults.filter(row => (row.confidence || 0) >= 90).length,
-            medium: filteredResults.filter(row => (row.confidence || 0) >= 70 && (row.confidence || 0) < 90).length,
-            low: filteredResults.filter(row => (row.confidence || 0) < 70).length
+            high: filteredResults.reduce((sum, row) => (row.confidence || 0) >= 90 ? sum + row.insertions : sum, 0),
+            medium: filteredResults.reduce((sum, row) => (row.confidence || 0) >= 70 && (row.confidence || 0) < 90 ? sum + row.insertions : sum, 0),
+            low: filteredResults.reduce((sum, row) => (row.confidence || 0) < 70 ? sum + row.insertions : sum, 0)
         };
 
         return { totalRows, totalInsertions, confidenceDistribution };
@@ -394,7 +395,7 @@ export default function InsertionLogPage() {
                     {/* Pass filtered results to table */}
                     <InsertionLogTable
                         data={filteredResults}
-                        summary={summary || { totalRows: 0, totalInsertions: 0, medios: [], insertionsByMedio: {}, insertionsByGenre: {}, dateRange: null, programs: 0 }}
+                        summary={summary || { totalRows: 0, totalInsertions: 0, medios: [], insertionsByMedio: {}, insertionsByGenre: {}, insertionsByProgram: {}, dateRange: null, programs: 0 }}
                         hideControls={true}
                         hideSummary={true}
                     />
