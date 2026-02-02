@@ -34,13 +34,23 @@ export function MonthFilter({ selectedMonths, onChange }: MonthFilterProps) {
         }
     };
 
+    // Get display labels for selected months
+    const getSelectedLabels = () => {
+        if (selectedMonths.length === 0) return "Select Months";
+        const labels = selectedMonths.map(val => {
+            const found = months.find(m => m.value === val);
+            return found ? found.label.replace(' 20', "'").replace(/uary|uary|rch|il|y|e|ust|ber|ober|ember/g, m => m.charAt(0)) : val;
+        });
+        return labels.join(', ');
+    };
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
                 <Button variant="outline" className="w-full justify-start h-8 px-2 gap-2">
                     <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                    <span className="font-bold text-[10px] truncate">
-                        {selectedMonths.length === 0 ? "Select Months" : `${selectedMonths.length} Selected`}
+                    <span className="font-bold text-[10px] truncate" title={selectedMonths.length > 0 ? selectedMonths.map(v => months.find(m => m.value === v)?.label).join(', ') : undefined}>
+                        {getSelectedLabels()}
                     </span>
                 </Button>
             </PopoverTrigger>
@@ -98,8 +108,8 @@ export function DayFilter({ selectedDays, onDayChange }: DayFilterProps) {
                 <Button variant="outline" className={cn("w-full justify-between h-8 px-2", selectedDays.length > 0 && "bg-muted/50 border-muted-foreground/30")}>
                     <div className="flex items-center gap-2 min-w-0">
                         <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        <span className="font-bold text-[10px] truncate">
-                            {selectedDays.length === 0 ? "Filter by Day" : `${selectedDays.length} Days`}
+                        <span className="font-bold text-[10px] truncate" title={selectedDays.length > 0 ? selectedDays.sort((a, b) => a - b).join(', ') : undefined}>
+                            {selectedDays.length === 0 ? "Filter by Day" : selectedDays.length === 31 ? "All Days" : selectedDays.sort((a, b) => a - b).join(', ')}
                         </span>
                     </div>
                     {selectedDays.length > 0 && (
@@ -183,8 +193,8 @@ export function MedioFilter({ medios, selectedMedios, onMedioChange }: MedioFilt
                 <Button variant="outline" className={cn("w-full justify-between h-8 px-2", selectedMedios.length > 0 && "bg-muted/50 border-muted-foreground/30")}>
                     <div className="flex items-center gap-2 min-w-0">
                         <Tv className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        <span className="font-bold text-[10px] truncate">
-                            {selectedMedios.length === 0 ? "Select Medios" : `${selectedMedios.length} Selected`}
+                        <span className="font-bold text-[10px] truncate" title={selectedMedios.length > 0 ? selectedMedios.join(', ') : undefined}>
+                            {selectedMedios.length === 0 ? "Select Medios" : selectedMedios.join(', ')}
                         </span>
                     </div>
                     {selectedMedios.length > 0 && (

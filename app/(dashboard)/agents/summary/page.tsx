@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { FileText, Play, Download, Search, CheckCircle2, AlertCircle, XCircle, ArrowUpDown } from 'lucide-react';
+import { FileText, Play, Download, Search, CheckCircle2, AlertCircle, XCircle, ArrowUpDown, BarChart3, Loader2, Eye } from 'lucide-react';
 import { useAiModel } from '@/hooks/use-ai-settings';
 import { useAliasMappings } from '@/hooks/use-alias-mappings';
 import { useFranjaMappings, FranjaMapping } from '@/hooks/use-franja-mappings';
@@ -26,6 +26,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
+import { AnalysisModal } from '@/components/summary/AnalysisModal';
 
 interface ReconciledRow extends NormalizedRow {
     franja: string;
@@ -117,6 +118,9 @@ export default function SummaryPage() {
                 // If it's a raw number string
                 setSelectedDays([Number(savedDays)]);
             }
+        } else {
+            // Default to all 31 days selected
+            setSelectedDays(Array.from({ length: 31 }, (_, i) => i + 1));
         }
         const savedMedios = localStorage.getItem('summary_medio_filter');
         if (savedMedios) {
@@ -139,6 +143,18 @@ export default function SummaryPage() {
     const [unmappedMedioSortField, setUnmappedMedioSortField] = useState<'date' | 'medio' | 'originalTitle' | 'franja' | 'timeRange' | 'duration' | 'insertions'>('date');
     const [unmappedMedioSortDirection, setUnmappedMedioSortDirection] = useState<SortDirection>('asc');
     const [accordionValue, setAccordionValue] = useState<string>("");
+
+    // Analysis state
+    const [analysisData, setAnalysisData] = useState<{
+        executiveSummary: string;
+        keyFindings: string[];
+        concerns: string[];
+        recommendations: string[];
+    } | null>(null);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isAnalysisModalOpen, setIsAnalysisModalOpen] = useState(false);
+    const [analysisGeneratedAt, setAnalysisGeneratedAt] = useState<string | undefined>();
+
 
     useEffect(() => {
         const saved = localStorage.getItem('summary_accordion_state');
@@ -337,6 +353,16 @@ export default function SummaryPage() {
             // Actually, for "Reconciliation", usually you want to reconcile what you see.
             // If selectedMonths has values, filter.
 
+            // If no days selected, show nothing
+            if (selectedDays.length === 0) {
+                setReconciledData([]);
+                setOverflowData([]);
+                setNonStandardData([]);
+                setUnmappedMedioData([]);
+                setIsLoading(false);
+                return;
+            }
+
             let filteredBudgetRows = budgetRows;
             if (selectedMonths.length > 0) {
                 filteredBudgetRows = budgetRows.filter(row => {
@@ -346,14 +372,10 @@ export default function SummaryPage() {
 
                     if (!selectedMonths.includes(rowMonth)) return false;
 
-                    if (selectedDays.length > 0) {
-                        const dayPart = parseInt(row.date.split('-')[2], 10);
-                        return selectedDays.includes(dayPart);
-                    }
-
-                    return true;
+                    const dayPart = parseInt(row.date.split('-')[2], 10);
+                    return selectedDays.includes(dayPart);
                 });
-            } else if (selectedDays.length > 0) {
+            } else {
                 filteredBudgetRows = budgetRows.filter(row => {
                     const dayPart = parseInt(row.date.split('-')[2], 10);
                     return selectedDays.includes(dayPart);
@@ -368,13 +390,10 @@ export default function SummaryPage() {
                 filteredInsertionRows = insertionRows.filter(row => {
                     const rowMonth = row.date.substring(0, 7);
                     if (!selectedMonths.includes(rowMonth)) return false;
-                    if (selectedDays.length > 0) {
-                        const dayPart = parseInt(row.date.split('-')[2], 10);
-                        return selectedDays.includes(dayPart);
-                    }
-                    return true;
+                    const dayPart = parseInt(row.date.split('-')[2], 10);
+                    return selectedDays.includes(dayPart);
                 });
-            } else if (selectedDays.length > 0) {
+            } else {
                 filteredInsertionRows = insertionRows.filter(row => {
                     const dayPart = parseInt(row.date.split('-')[2], 10);
                     return selectedDays.includes(dayPart);
@@ -688,6 +707,45 @@ export default function SummaryPage() {
             localStorage.setItem('summary_medio_filter', JSON.stringify(medios));
         } else {
             localStorage.removeItem('summary_medio_filter');
+        }
+    };
+
+    // Run AI Analysis
+    const runAnalysis = async () => {
+        if (!stats) return;
+
+        setIsAnalyzing(true);
+        try {
+            const response = await fetch('/api/analyze-summary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    stats,
+                    dateRange: {
+                        months: selectedMonths,
+                        days: selectedDays
+                    },
+                    files: {
+                        budget: budgetData?.fileNames || budgetData?.fileName || 'Unknown',
+                        insertion: insertionData?.fileName || 'Unknown'
+                    },
+                    medios: availableMedios,
+                    modelName: model
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('Analysis request failed');
+            }
+
+            const result = await response.json();
+            setAnalysisData(result.analysis);
+            setAnalysisGeneratedAt(result.generatedAt);
+        } catch (error) {
+            console.error('Analysis failed:', error);
+            alert('Failed to generate analysis. Please try again.');
+        } finally {
+            setIsAnalyzing(false);
         }
     };
 
@@ -1151,27 +1209,19 @@ export default function SummaryPage() {
                             </CardHeader>
                             <CardContent className="px-2 pb-2 pt-1 flex-1">
                                 <div className="flex flex-col gap-1.5">
-                                    {/* Row 1: Month and Day */}
-                                    <div className="grid grid-cols-2 gap-1.5">
-                                        <MonthFilter
-                                            selectedMonths={selectedMonths}
-                                            onChange={handleMonthChange}
-                                        />
-                                        <DayFilter
-                                            selectedDays={selectedDays}
-                                            onDayChange={handleDayChange}
-                                        />
-                                    </div>
-
-                                    {/* Row 2: Medio Filter (Half Width) */}
-                                    <div className="grid grid-cols-2 gap-1.5">
-                                        <MedioFilter
-                                            medios={availableMedios}
-                                            selectedMedios={selectedMedios}
-                                            onMedioChange={handleMedioChange}
-                                        />
-                                        <div />
-                                    </div>
+                                    <MonthFilter
+                                        selectedMonths={selectedMonths}
+                                        onChange={handleMonthChange}
+                                    />
+                                    <DayFilter
+                                        selectedDays={selectedDays}
+                                        onDayChange={handleDayChange}
+                                    />
+                                    <MedioFilter
+                                        medios={availableMedios}
+                                        selectedMedios={selectedMedios}
+                                        onMedioChange={handleMedioChange}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
@@ -1236,8 +1286,47 @@ export default function SummaryPage() {
 
                     </div>
 
-                    {/* Column 4: Remainder Spacing - Span 2 */}
-                    <div className="hidden xl:block xl:col-span-2"></div>
+                    {/* Column 4: Actions - Span 2 */}
+                    <div className="hidden xl:flex xl:col-span-2 flex-col gap-2 h-full">
+                        <Card className="h-full flex flex-col shadow-sm">
+                            <CardHeader className="py-1 px-1 bg-muted/10">
+                                <CardTitle className="text-[10px] font-bold text-muted-foreground text-center uppercase tracking-widest">
+                                    Actions
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="px-2 pb-2 pt-1 flex-1 flex flex-col gap-1.5 justify-center">
+                                <Button
+                                    size="sm"
+                                    onClick={runAnalysis}
+                                    disabled={isAnalyzing || !stats}
+                                    className="w-full h-8 text-[10px] font-bold gap-1.5"
+                                >
+                                    {isAnalyzing ? (
+                                        <>
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                            Analyzing...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <BarChart3 className="w-3 h-3" />
+                                            Analyze
+                                        </>
+                                    )}
+                                </Button>
+                                {analysisData && (
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setIsAnalysisModalOpen(true)}
+                                        className="w-full h-8 text-[10px] font-bold gap-1.5"
+                                    >
+                                        <Eye className="w-3 h-3" />
+                                        Show Analysis
+                                    </Button>
+                                )}
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </div>
 
@@ -1536,6 +1625,23 @@ export default function SummaryPage() {
                     )}
                 </div>
             )}
+
+            {/* Analysis Modal */}
+            <AnalysisModal
+                isOpen={isAnalysisModalOpen}
+                onClose={() => setIsAnalysisModalOpen(false)}
+                analysis={analysisData}
+                stats={stats}
+                dateRange={{
+                    months: selectedMonths,
+                    days: selectedDays
+                }}
+                files={{
+                    budget: String(budgetData?.fileNames || budgetData?.fileName || 'Unknown'),
+                    insertion: insertionData?.fileName || 'Unknown'
+                }}
+                generatedAt={analysisGeneratedAt}
+            />
         </div>
     );
 }
